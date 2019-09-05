@@ -228,6 +228,10 @@ async def characterinfo(bot, filter, channel):
             query = bytes('get staff basic (id = {})\x04'.format(va['aid']), encoding='utf8')
             bot.sock.send(query)
             actor = await receive_data(bot, channel, 'actor')
+            if not actor:
+                query = bytes('get staff basic (id = {})\x04'.format(va['id']), encoding='utf8')
+                bot.sock.send(query)
+                actor = await receive_data(bot, channel, 'actor')
             if actor['original']:
                 description += '- {} ({})\n'.format(actor['original'], actor['name'])
             else:
