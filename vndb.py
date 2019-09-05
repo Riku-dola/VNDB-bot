@@ -74,10 +74,10 @@ async def randtag(bot, args, channel):
         tags = json.load(dump)
     t = next((tag for tag in tags if tag['name'].lower() == args), None)
     if not t:
-        channel.send('Tag not found.')
+        await channel.send('Tag not found.')
         return
     if not t['searchable']:
-        channel.send('Tag not searchable.')
+        await channel.send('Tag not searchable.')
         return
     filter = '(tags = {})'.format(t['id'])
     await search(bot, filter, channel, rand=True)
