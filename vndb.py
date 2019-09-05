@@ -3,6 +3,7 @@ import random
 import re
 import socket
 import textwrap
+import time
 
 
 def login(bot):
@@ -57,9 +58,10 @@ async def search(bot, filter, channel, rand=False):
     res = bot.sock.recv(2048)
     while res[-1:] != b'\x04':
         res += bot.sock.recv(2048)
+    response, res = res.decode().split(' ', 1)
+    res = json.loads(res[:-1])
+    await verify(response, res, channel)
 
-    # more elegant way to do this?
-    res = json.loads(res.decode()[8:-1])
     # print(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
     if not res['num']:
         await channel.send('Visual novel not found.')
@@ -86,7 +88,9 @@ async def search(bot, filter, channel, rand=False):
 
 async def rand(bot, channel):
     bot.sock.send(b'dbstats\x04')
-    stats = json.loads(bot.sock.recv(256).decode()[8:-1])
+    response, res = bot.sock.recv(256).decode().split(' ', 1)
+    stats = json.loads(res[:-1])
+    await verify(response, stats, channel)
     filter = '(id = {})'.format(random.randint(1, stats['vn']))
     await search(bot, filter, channel)
 
@@ -114,17 +118,17 @@ async def relations(bot, filter, channel):
     while res[-1:] != b'\x04':
         res += bot.sock.recv(2048)
 
-    try:
-        res = json.loads(res.decode()[8:-1])
-        description = '**Related Visual Novels:**\n\n'
-        for r in res['items'][0]['relations']:
-            description += r['title'] + '\n'
-            description += 'https://vndb.org/v' + r['id'] + '\n\n'
+    response, res = res.decode().split(' ', 1)
+    res = json.loads(res[:-1])
+    await verify(response, res, channel)
 
-        await create_embed(bot, res, description, channel)
+    description = '**Related Visual Novels:**\n\n'
+    data = res['items'][0]
+    for r in data['relations']:
+        description += r['title'] + '\n'
+        description += 'https://vndb.org/v{}'.format(r['id']) + '\n\n'
 
-    except:
-        await channel.send('API Error.')
+    await create_embed(bot, data, description, channel)
 
 
 async def character(bot, filter, channel):
@@ -135,7 +139,10 @@ async def character(bot, filter, channel):
     while res[-1:] != b'\x04':
         res += bot.sock.recv(2048)
 
-    res = json.loads(res.decode()[8:-1])
+    response, res = res.decode().split(' ', 1)
+    res = json.loads(res[:-1])
+    await verify(response, res, channel)
+
     if not res['num']:
         await channel.send('Character not found.')
         return
@@ -166,6 +173,17 @@ async def character(bot, filter, channel):
 async def help(bot, channel):
     with open('data/help') as help:
         await bot.post_embed(title='Commands:', description=help.read(), channel=channel)
+
+
+async def verify(response, res, channel):
+    print("verifying")
+    if not response == 'error':
+        return
+
+    if res['id'] == 'throttled':
+        await channel.send('Too many requests. Sleeping for {} seconds.'.format(res['fullwait']))
+        time.sleep(res['fullwait'])
+        raise Exception
         
 
 async def interject(message):
