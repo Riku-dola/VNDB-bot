@@ -1,0 +1,14 @@
+`.vn help`
+Display this help dialog.
+
+`.vn search [TITLE]`
+Search for a visual novel.
+
+`.vn random`
+Get a random visual novel.
+
+`.vn relations [TITLE]`
+Find all visual novels related to the specified title.
+
+`.vn character [NAME]`
+Search for a character matching
