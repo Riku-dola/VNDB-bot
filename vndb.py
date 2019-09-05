@@ -148,6 +148,8 @@ async def character(bot, filter, channel):
     if data['description']:
         description = textwrap.shorten(data['description'], width=1000, placeholder='...')
         description = re.sub('\[Spoiler]|\[/Spoiler]', '||', description)
+        description = re.sub('\[From.*]', '', description)
+        description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
     else:
         description = 'No description.'
     url = 'https://vndb.org/c{}'.format(data['id'])
