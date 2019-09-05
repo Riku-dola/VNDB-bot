@@ -78,7 +78,7 @@ async def search(bot, filter, channel, rand=False):
         return
     elif data['description']:
         description = textwrap.shorten(data['description'], width=1000, placeholder='...')
-        description = re.sub('\[From.*]', '', description)
+        description = re.sub('\[[F|f]rom.*]', '', description)
         description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
     else:
         description = 'No description.'
@@ -159,7 +159,7 @@ async def character(bot, filter, channel):
     if data['description']:
         description = textwrap.shorten(data['description'], width=1000, placeholder='...')
         description = re.sub('\[Spoiler]|\[/Spoiler]', '||', description)
-        description = re.sub('\[From.*]', '', description)
+        description = re.sub('\[[F|f]rom.*]', '', description)
         description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
     else:
         description = 'No description.'
