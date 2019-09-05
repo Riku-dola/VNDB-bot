@@ -10,7 +10,7 @@ def login(bot):
     bot.sock.connect(('api.vndb.org', 19534))
     with open('tokens/vndb', 'rb') as token:
         bot.sock.send(token.read())
-    print(bot.sock.recv(128))
+    print(bot.sock.recv(128).decode())
 
 
 async def create_embed(bot, data, description, channel):
@@ -69,7 +69,7 @@ async def search(bot, filter, channel, rand=False):
         data = await choose(bot, res, channel, True)
 
     if not data:
-        print('early exit') 
+        # print('early exit') 
         return
     elif data['description']:
         description = textwrap.shorten(data['description'], width=1000, placeholder='...')
@@ -132,7 +132,6 @@ async def character(bot, filter, channel):
     while res[-1:] != b'\x04':
         res += bot.sock.recv(2048)
 
-    print(res.decode())
     res = json.loads(res.decode()[8:-1])
     if not res['num']:
         await channel.send('Character not found.')
