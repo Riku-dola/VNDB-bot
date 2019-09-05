@@ -29,6 +29,24 @@ async def create_embed(bot, data, description, channel):
         thumbnail=thumbnail, footer=footer, channel=channel)
 
 
+async def choose(bot, res, channel, game):
+    title = 'Which did you mean?'
+    description = str()
+    key = 'title' if game else 'name'
+    for i in range(min(9, res['num'])):
+        description += '**[{}]** {}\n'.format(i + 1, res['items'][i][key])
+    if res['num'] > 9:
+        footer = 'Some search results not shown. Refine your search terms to display them.'
+    else:
+        footer = None
+    await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
+    msg = await bot.wait_for('message', timeout=10)
+    index = int(msg.content) - 1
+    if not 0 <= index <= min(9, res['num']):
+        return None
+    return res['items'][index]
+
+
 async def search(bot, filter, channel, rand=False):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
@@ -37,29 +55,30 @@ async def search(bot, filter, channel, rand=False):
     while res[-1:] != b'\x04':
         res += bot.sock.recv(2048)
 
-    try:
-        # more elegant way to do this?
-        res = json.loads(res.decode()[8:-1])
-        # print(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
-        if not res['num']:
-            await channel.send('Visual novel not found.')
-            return
+    # more elegant way to do this?
+    res = json.loads(res.decode()[8:-1])
+    # print(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
+    if not res['num']:
+        await channel.send('Visual novel not found.')
+        return
+    elif rand:
+        data = res['items'][random.randint(0, len(res['items']) - 1)]
+    elif res['num'] == 1:
+        data = res['items'][0]
+    else:
+        data = await choose(bot, res, channel, True)
 
-        if rand:
-            data = res['items'][random.randint(0, len(res['items']) - 1)]
-        else:
-            data = res['items'][0]
-        if data['description']:
-            description = textwrap.shorten(data['description'], width=1000, placeholder='...')
-            description = re.sub('\[From.*]', '', description)
-            description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
-        else:
-            description = 'No description.'
+    if not data:
+        print('early exit') 
+        return
+    elif data['description']:
+        description = textwrap.shorten(data['description'], width=1000, placeholder='...')
+        description = re.sub('\[From.*]', '', description)
+        description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
+    else:
+        description = 'No description.'
 
-        await create_embed(bot, data, description, channel)
-
-    except:
-        await channel.send('API Error.')
+    await create_embed(bot, data, description, channel)
 
 
 async def rand(bot, channel):
@@ -72,7 +91,8 @@ async def rand(bot, channel):
 async def randtag(bot, args, channel):
     with open('data/vndb-tags-2019-09-04.json', 'r') as dump:
         tags = json.load(dump)
-    t = next((tag for tag in tags if tag['name'].lower() == args), None)
+    t = next((tag for tag in tags if args in [tag['name'].lower()] + [a.lower() for a in tag['aliases']]), None)
+
     if not t:
         await channel.send('Tag not found.')
         return
@@ -105,33 +125,34 @@ async def relations(bot, filter, channel):
 
 
 async def character(bot, filter, channel):
-    query = bytes('get character basic,details,voiced {}\x04'.format(filter), encoding='utf8')
+    query = bytes('get character basic,details,voiced,vns {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
     # I want to do this loop better
     res = bot.sock.recv(2048)
     while res[-1:] != b'\x04':
         res += bot.sock.recv(2048)
 
-    try:
-        res = json.loads(res.decode()[8:-1])
-        if not res['num']:
-            await channel.send('Character not found.')
-            return
+    print(res.decode())
+    res = json.loads(res.decode()[8:-1])
+    if not res['num']:
+        await channel.send('Character not found.')
+        return
+    elif res['num'] == 1:
+        data = res['items'][0]
+    else:
+        data = await choose(bot, res, channel, False)
 
-        title = '{} ({})'.format(res['items'][0]['original'], res['items'][0]['name'])
-        if res['items'][0]['description']:
-            description = textwrap.shorten(res['items'][0]['description'], width=1000, placeholder='...')
-            description = re.sub('\[Spoiler]|\[/Spoiler]', '||', description)
-        else:
-            description = 'No description.'
-        url = 'https://vndb.org/c{}'.format(res['items'][0]['id'])
-        image = res['items'][0]['image']
+    title = '{} ({})'.format(data['original'], data['name'])
+    if data['description']:
+        description = textwrap.shorten(data['description'], width=1000, placeholder='...')
+        description = re.sub('\[Spoiler]|\[/Spoiler]', '||', description)
+    else:
+        description = 'No description.'
+    url = 'https://vndb.org/c{}'.format(data['id'])
+    image = data['image']
 
-        await bot.post_embed(title=title, description=description, url=url, image=image,
-            channel=channel)
-
-    except:
-        await channel.send('API Error.')
+    await bot.post_embed(title=title, description=description, url=url, image=image,
+        channel=channel)
 
 
 async def help(bot, channel):
