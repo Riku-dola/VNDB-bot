@@ -41,7 +41,7 @@ class vndbot(discord.Client):
         args = args[0] if args else None
         channel = message.channel
 
-        aliases = ['search', 's', 'find']
+        aliases = ['search', 's', 'find', 'f']
         if cmd in aliases:
             filter = '(title ~ "{}")'.format(args)
             await vndb.search(self, filter, channel)
@@ -63,6 +63,11 @@ class vndbot(discord.Client):
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.character(self, filter, channel)
+
+        aliases = ['characterinfo', 'charinfo', 'ci']
+        if cmd in aliases:
+            filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
+            await vndb.characterinfo(self, filter, channel)
 
         aliases = ['help', 'h']
         if cmd in aliases:

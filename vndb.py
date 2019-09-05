@@ -6,6 +6,11 @@ import textwrap
 import time
 
 
+'''
+Helper functions
+'''
+
+
 def login(bot):
     bot.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     bot.sock.connect(('api.vndb.org', 19534))
@@ -30,12 +35,16 @@ async def create_embed(bot, data, description, channel):
         thumbnail=thumbnail, footer=footer, channel=channel)
 
 
-async def choose(bot, res, channel, game):
+async def choose(bot, res, channel, type):
     title = 'Which did you mean?'
     description = str()
-    key = 'title' if game else 'name'
+    if type == 'game':
+        key = 'title'
+    elif type == 'char':
+        key = 'name'
+
     for i in range(min(9, res['num'])):
-        if not game and res['items'][i]['original']:
+        if type == 'char' and res['items'][i]['original']:
             description += '**[{}]** {} ({})\n'.format(i + 1, res['items'][i]['original'], res['items'][i][key])
         else:
             description += '**[{}]** {}\n'.format(i + 1, res['items'][i][key])
@@ -51,30 +60,44 @@ async def choose(bot, res, channel, game):
     return res['items'][index]
 
 
-async def search(bot, filter, channel, rand=False):
-    query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
-    bot.sock.send(query)
+async def receive_data(bot, channel, type):
     # I want to do this loop better
     res = bot.sock.recv(2048)
     while res[-1:] != b'\x04':
         res += bot.sock.recv(2048)
+
     response, res = res.decode().split(' ', 1)
     res = json.loads(res[:-1])
-    await verify(response, res, channel)
 
-    # print(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
-    if not res['num']:
-        await channel.send('Visual novel not found.')
-        return
-    elif rand:
-        data = res['items'][random.randint(0, len(res['items']) - 1)]
+    if response == 'error' and res['id'] == 'throttled':
+        await channel.send('Too many requests. Sleeping for {} seconds.'.format(res['fullwait']))
+        time.sleep(res['fullwait'])
+        raise Exception
+
+    if type == 'stats':
+        return res
+    elif not res['num']:
+        return None
+    elif type == 'relations':
+        return res['items'][0]
     elif res['num'] == 1:
-        data = res['items'][0]
+        return res['items'][0]
     else:
-        data = await choose(bot, res, channel, True)
+        return await choose(bot, res, channel, type)
+
+
+'''
+Commands
+'''
+
+
+async def search(bot, filter, channel, rand=False):
+    query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
+    bot.sock.send(query)
+    data = await receive_data(bot, channel, 'game')
 
     if not data:
-        # print('early exit') 
+        await channel.send('Visual novel not found.').
         return
     elif data['description']:
         description = textwrap.shorten(data['description'], width=1000, placeholder='...')
@@ -88,10 +111,8 @@ async def search(bot, filter, channel, rand=False):
 
 async def rand(bot, channel):
     bot.sock.send(b'dbstats\x04')
-    response, res = bot.sock.recv(256).decode().split(' ', 1)
-    stats = json.loads(res[:-1])
-    await verify(response, stats, channel)
-    filter = '(id = {})'.format(random.randint(1, stats['vn']))
+    data = await receive_data(bot, channel, 'stats')
+    filter = '(id = {})'.format(random.randint(1, data['vn']))
     await search(bot, filter, channel)
 
 
@@ -113,17 +134,13 @@ async def randtag(bot, args, channel):
 async def relations(bot, filter, channel):
     query = bytes('get vn basic,details,relations {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
-    # I want to do this loop better
-    res = bot.sock.recv(2048)
-    while res[-1:] != b'\x04':
-        res += bot.sock.recv(2048)
+    data = await receive_data(bot, channel, 'relations')
 
-    response, res = res.decode().split(' ', 1)
-    res = json.loads(res[:-1])
-    await verify(response, res, channel)
-
+    if not data:
+        await channel.send('API Error.')
+        return
+    
     description = '**Related Visual Novels:**\n\n'
-    data = res['items'][0]
     for r in data['relations']:
         description += r['title'] + '\n'
         description += 'https://vndb.org/v{}'.format(r['id']) + '\n\n'
@@ -132,26 +149,14 @@ async def relations(bot, filter, channel):
 
 
 async def character(bot, filter, channel):
-    query = bytes('get character basic,details,voiced,vns {}\x04'.format(filter), encoding='utf8')
+    query = bytes('get character basic,details {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
-    # I want to do this loop better
-    res = bot.sock.recv(2048)
-    while res[-1:] != b'\x04':
-        res += bot.sock.recv(2048)
+    data = await receive_data(bot, channel, 'char')
 
-    response, res = res.decode().split(' ', 1)
-    res = json.loads(res[:-1])
-    await verify(response, res, channel)
-
-    if not res['num']:
+    if not data:
         await channel.send('Character not found.')
         return
-    elif res['num'] == 1:
-        data = res['items'][0]
-    else:
-        data = await choose(bot, res, channel, False)
-
-    if data['original']:
+    elif data['original']:
         title = '{} ({})'.format(data['original'], data['name'])
     else:
         title = data['name']
@@ -170,21 +175,26 @@ async def character(bot, filter, channel):
         channel=channel)
 
 
+async def characterinfo(bot, filter, channel):
+    query = bytes('get character basic,details,voiced,vns {}\x04'.format(filter), encoding='utf8')
+    bot.sock.send(query)
+    data = await receive_data(bot, channel, 'char')
+
+    if not data:
+        await channel.send('Character not found.')
+        return
+    elif data['original']:
+        title = '{} ({})'.format(data['original'], data['name'])
+    else:
+        title = data['name']
+
+    print(data)
+
+
 async def help(bot, channel):
     with open('data/help') as help:
         await bot.post_embed(title='Commands:', description=help.read(), channel=channel)
 
-
-async def verify(response, res, channel):
-    print("verifying")
-    if not response == 'error':
-        return
-
-    if res['id'] == 'throttled':
-        await channel.send('Too many requests. Sleeping for {} seconds.'.format(res['fullwait']))
-        time.sleep(res['fullwait'])
-        raise Exception
-        
 
 async def interject(message):
     if random.randint(0, 1):
