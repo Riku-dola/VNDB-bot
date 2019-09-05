@@ -2,7 +2,6 @@ import json
 import random
 import re
 import socket
-import textwrap
 import time
 
 
@@ -97,10 +96,10 @@ async def search(bot, filter, channel, rand=False):
     data = await receive_data(bot, channel, 'game')
 
     if not data:
-        await channel.send('Visual novel not found.').
+        await channel.send('Visual novel not found.')
         return
     elif data['description']:
-        description = textwrap.shorten(data['description'], width=1000, placeholder='...')
+        description = data['description'][:1000] + (data['description'][1000:] and '...')
         description = re.sub('\[[F|f]rom.*]', '', description)
         description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
     else:
@@ -162,12 +161,14 @@ async def character(bot, filter, channel):
         title = data['name']
 
     if data['description']:
-        description = textwrap.shorten(data['description'], width=1000, placeholder='...')
-        description = re.sub('\[Spoiler]|\[/Spoiler]', '||', description)
+        description = data['description'][:1000] + (data['description'][1000:] and '...')
+        description = re.sub('\[[S|s]poiler]|\[/[S|s]poiler]', '||', description)
         description = re.sub('\[[F|f]rom.*]', '', description)
         description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
+        description += '||' if description.count('||') % 2 else ''
     else:
         description = 'No description.'
+
     url = 'https://vndb.org/c{}'.format(data['id'])
     image = data['image']
 
@@ -176,7 +177,7 @@ async def character(bot, filter, channel):
 
 
 async def characterinfo(bot, filter, channel):
-    query = bytes('get character basic,details,voiced,vns {}\x04'.format(filter), encoding='utf8')
+    query = bytes('get character basic,details,meas,voiced,vns {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
 
@@ -188,7 +189,56 @@ async def characterinfo(bot, filter, channel):
     else:
         title = data['name']
 
-    print(data)
+    description = ''
+
+    if data['aliases']:
+        description += '**Aliases:**\n'
+        for alias in data['aliases'].splitlines():
+            description += '- {}\n'.format(alias)
+        description += '\n'
+
+    if data['gender']:
+        genders = {'m': 'Male', 'f': 'Female', 'b': 'Both'}
+        description += '**Gender:**\n- {}\n\n'.format(genders[data['gender']])
+
+    if data['bloodt']:
+        description += '**Blood Type:**\n- {}\n\n'.format(genders[data['gender']].upper())
+
+    if data['height'] or data['weight'] or (data['bust'] and data['waist'] and data['hip']):
+        description += '**Measurements:**\n'
+        if data['height']:
+            description += '- {}cm\n'.format(data['height'])
+        if data['weight']:
+            description += '- {} kg\n'.format(data['weight'])
+        if data['bust'] and data['waist'] and data['hip']:
+            description += '- {}/{}/{} cm\n'.format(data['bust'], data['waist'], data['hip'])
+        description += '\n'
+
+    description += '**Appears in:**\n'
+    for vn in data['vns']:
+        query = bytes('get vn basic (id = {})\x04'.format(vn[0]), encoding='utf8')
+        bot.sock.send(query)
+        game = await receive_data(bot, channel, 'game')
+        description += '- {}\n'.format(game['title'])
+    description += '\n'
+
+    if data['voiced']:
+        description += '**Voiced by:**\n'
+        for va in data['voiced']:
+            query = bytes('get staff basic (id = {})\x04'.format(va['aid']), encoding='utf8')
+            bot.sock.send(query)
+            actor = await receive_data(bot, channel, 'actor')
+            if actor['original']:
+                description += '- {} ({})\n'.format(actor['original'], actor['name'])
+            else:
+                description += '- {}\n'.format(actor['name'])
+        description += '\n'
+
+    url = 'https://vndb.org/c{}'.format(data['id'])
+    thumbnail = data['image']
+
+    await bot.post_embed(title=title, description=description, url=url, thumbnail=thumbnail,
+        channel=channel)
 
 
 async def help(bot, channel):

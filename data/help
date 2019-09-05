@@ -8,10 +8,13 @@ Search for a visual novel.
 Get a random visual novel.
 
 `.vn relations [TITLE]`
-Find all visual novels related to the specified title.
+Find all visual novels matching the specified title.
 
 `.vn character [NAME]`
-Search for a character matching
+Search for a character matching the specified name.
+
+`.vn characterinfo [NAME]`
+Get detailed information about a character matching the specified name.
 
 `.vn tag [TAG]`
-Get a random visual novel with the specified tag.
+Get a random visual novel matching the specified tag.

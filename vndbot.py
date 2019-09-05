@@ -64,7 +64,7 @@ class vndbot(discord.Client):
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.character(self, filter, channel)
 
-        aliases = ['characterinfo', 'charinfo', 'ci']
+        aliases = ['characterinfo', 'charinfo', 'ci', 'characterstats', 'charstats', 'cs']
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.characterinfo(self, filter, channel)
