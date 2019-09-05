@@ -202,7 +202,7 @@ async def characterinfo(bot, filter, channel):
         description += '**Gender:**\n- {}\n\n'.format(genders[data['gender']])
 
     if data['bloodt']:
-        description += '**Blood Type:**\n- {}\n\n'.format(genders[data['gender']].upper())
+        description += '**Blood Type:**\n- {}\n\n'.format(genders[data['bloodt']].upper())
 
     if data['height'] or data['weight'] or (data['bust'] and data['waist'] and data['hip']):
         description += '**Measurements:**\n'
