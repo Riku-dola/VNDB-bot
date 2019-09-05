@@ -224,7 +224,11 @@ async def characterinfo(bot, filter, channel):
 
     if data['voiced']:
         description += '**Voiced by:**\n'
+        seen = set()
         for va in data['voiced']:
+            if va['id'] in seen:
+                continue
+            seen.add(va['id'])
             query = bytes('get staff basic (id = {})\x04'.format(va['aid']), encoding='utf8')
             bot.sock.send(query)
             actor = await receive_data(bot, channel, 'actor')
