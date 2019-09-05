@@ -144,7 +144,11 @@ async def character(bot, filter, channel):
     else:
         data = await choose(bot, res, channel, False)
 
-    title = '{} ({})'.format(data['original'], data['name'])
+    if data['original']:
+        title = '{} ({})'.format(data['original'], data['name'])
+    else:
+        title = data['name']
+
     if data['description']:
         description = textwrap.shorten(data['description'], width=1000, placeholder='...')
         description = re.sub('\[Spoiler]|\[/Spoiler]', '||', description)
