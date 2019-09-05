@@ -153,7 +153,7 @@ async def character(bot, filter, channel):
     data = await receive_data(bot, channel, 'char')
 
     if not data:
-        await channel.send('Character not found.')
+        await channel.send('Literally who?')
         return
     elif data['original']:
         title = '{} ({})'.format(data['original'], data['name'])
@@ -182,7 +182,7 @@ async def characterinfo(bot, filter, channel):
     data = await receive_data(bot, channel, 'char')
 
     if not data:
-        await channel.send('Character not found.')
+        await channel.send('Literally who?')
         return
     elif data['original']:
         title = '{} ({})'.format(data['original'], data['name'])
@@ -202,7 +202,7 @@ async def characterinfo(bot, filter, channel):
         description += '**Gender:**\n- {}\n\n'.format(genders[data['gender']])
 
     if data['bloodt']:
-        description += '**Blood Type:**\n- {}\n\n'.format(genders[data['bloodt']].upper())
+        description += '**Blood Type:**\n- {}\n\n'.format(data['bloodt'].upper())
 
     if data['height'] or data['weight'] or (data['bust'] and data['waist'] and data['hip']):
         description += '**Measurements:**\n'
