@@ -50,6 +50,10 @@ class vndbot(discord.Client):
         if cmd in aliases:
             await vndb.rand(self, channel)
 
+        aliases = ['randtag', 'tag', 't']
+        if cmd in aliases:
+            await vndb.randtag(self, args, channel)
+
         aliases = ['relations', 'related', 'rel']
         if cmd in aliases:
             filter = '(title ~ "{}")'.format(args)

@@ -14,15 +14,14 @@ def login(bot):
 
 
 async def create_embed(bot, data, description, channel):
-    if not data['num']:
-        await channel.send('Visual novel not found.')
-        return
-
-    title = '{} ({})'.format(data['items'][0]['original'], data['items'][0]['title'])
-    url = 'https://vndb.org/v{}'.format(data['items'][0]['id'])
-    footer = 'Release date: {}'.format(data['items'][0]['released'])
-    if not data['items'][0]['image_nsfw']:
-        thumbnail = data['items'][0]['image']
+    url = 'https://vndb.org/v{}'.format(data['id'])
+    footer = 'Release date: {}'.format(data['released'])
+    if data['original']:
+        title = '{} ({})'.format(data['original'], data['title'])
+    else:
+        title = data['title']
+    if not data['image_nsfw']:
+        thumbnail = data['image']
     else:
         thumbnail = 'https://i.imgur.com/p8HQTjm.png'
 
@@ -30,7 +29,7 @@ async def create_embed(bot, data, description, channel):
         thumbnail=thumbnail, footer=footer, channel=channel)
 
 
-async def search(bot, filter, channel):
+async def search(bot, filter, channel, rand=False):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
     # I want to do this loop better
@@ -41,14 +40,23 @@ async def search(bot, filter, channel):
     try:
         # more elegant way to do this?
         res = json.loads(res.decode()[8:-1])
-        if res['items'][0]['description']:
-            description = textwrap.shorten(res['items'][0]['description'], width=1000, placeholder='...')
+        # print(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
+        if not res['num']:
+            await channel.send('Visual novel not found.')
+            return
+
+        if rand:
+            data = res['items'][random.randint(0, len(res['items']) - 1)]
+        else:
+            data = res['items'][0]
+        if data['description']:
+            description = textwrap.shorten(data['description'], width=1000, placeholder='...')
             description = re.sub('\[From.*]', '', description)
             description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
         else:
             description = 'No description.'
 
-        await create_embed(bot, res, description, channel)
+        await create_embed(bot, data, description, channel)
 
     except:
         await channel.send('API Error.')
@@ -59,6 +67,20 @@ async def rand(bot, channel):
     stats = json.loads(bot.sock.recv(256).decode()[8:-1])
     filter = '(id = {})'.format(random.randint(1, stats['vn']))
     await search(bot, filter, channel)
+
+
+async def randtag(bot, args, channel):
+    with open('data/vndb-tags-2019-09-04.json', 'r') as dump:
+        tags = json.load(dump)
+    t = next((tag for tag in tags if tag['name'].lower() == args), None)
+    if not t:
+        channel.send('Tag not found.')
+        return
+    if not t['searchable']:
+        channel.send('Tag not searchable.')
+        return
+    filter = '(tags = {})'.format(t['id'])
+    await search(bot, filter, channel, rand=True)
 
 
 async def relations(bot, filter, channel):
@@ -92,7 +114,6 @@ async def character(bot, filter, channel):
 
     try:
         res = json.loads(res.decode()[8:-1])
-        # print(json.dumps(res, sort_keys=True, indent=4, separators=(',', ': ')))
         if not res['num']:
             await channel.send('Character not found.')
             return
