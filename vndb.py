@@ -34,7 +34,10 @@ async def choose(bot, res, channel, game):
     description = str()
     key = 'title' if game else 'name'
     for i in range(min(9, res['num'])):
-        description += '**[{}]** {}\n'.format(i + 1, res['items'][i][key])
+        if not game and res['items'][i]['original']:
+            description += '**[{}]** {} ({})\n'.format(i + 1, res['items'][i]['original'], res['items'][i][key])
+        else:
+            description += '**[{}]** {}\n'.format(i + 1, res['items'][i][key])
     if res['num'] > 9:
         footer = 'Some search results not shown. Refine your search terms to display them.'
     else:
