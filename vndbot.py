@@ -7,6 +7,7 @@ class vndbot(discord.Client):
 
     async def on_connect(self):
         vndb.login(self)
+        vndb.load_tags(self)
 
 
     async def on_disconnect(self):
@@ -50,9 +51,9 @@ class vndbot(discord.Client):
         if cmd in aliases:
             await vndb.rand(self, channel)
 
-        aliases = ['randtag', 'tag', 't']
+        aliases = ['tagsearch', 'tags', 'tag', 'ts', 't']
         if cmd in aliases:
-            await vndb.randtag(self, args, channel)
+            await vndb.tagsearch(self, args, channel)
 
         aliases = ['relations', 'related', 'rel']
         if cmd in aliases:

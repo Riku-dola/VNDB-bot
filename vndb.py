@@ -18,6 +18,17 @@ def login(bot):
     print(bot.sock.recv(128).decode())
 
 
+def load_tags(bot):
+    with open('data/vndb-tags-2019-09-04.json', 'r') as dump:
+        tags = json.load(dump)
+
+    bot.tags = dict()
+    for tag in tags:
+        bot.tags[tag['name'].lower()] = tag
+        for alias in tag['aliases']:
+            bot.tags[alias.lower()] = tag
+
+
 async def create_embed(bot, data, description, channel):
     url = 'https://vndb.org/v{}'.format(data['id'])
     footer = 'Release date: {}'.format(data['released'])
@@ -53,6 +64,8 @@ async def choose(bot, res, channel, type):
         footer = None
     await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
     msg = await bot.wait_for('message', timeout=10)
+    while not msg.channel == channel:
+        msg = await bot.wait_for('message', timeout=10)
     index = int(msg.content) - 1
     if not 0 <= index <= min(9, res['num']):
         return None
@@ -90,7 +103,7 @@ Commands
 '''
 
 
-async def search(bot, filter, channel, rand=False):
+async def search(bot, filter, channel):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'game')
@@ -115,19 +128,18 @@ async def rand(bot, channel):
     await search(bot, filter, channel)
 
 
-async def randtag(bot, args, channel):
-    with open('data/vndb-tags-2019-09-04.json', 'r') as dump:
-        tags = json.load(dump)
-    t = next((tag for tag in tags if args in [tag['name'].lower()] + [a.lower() for a in tag['aliases']]), None)
+async def tagsearch(bot, args, channel):
+    tags = list()
+    for arg in args.lower().split(', '):
+        if arg in bot.tags and bot.tags[arg]['searchable']:
+            tags.append(bot.tags[arg]['id'])
 
-    if not t:
-        await channel.send('Tag not found.')
+    if not tags:
+        await channel.send('Tag(s) not found')
         return
-    if not t['searchable']:
-        await channel.send('Tag not searchable.')
-        return
-    filter = '(tags = {})'.format(t['id'])
-    await search(bot, filter, channel, rand=True)
+
+    filter = '(tags = {})'.format(json.dumps(tags))
+    await search(bot, filter, channel)
 
 
 async def relations(bot, filter, channel):
