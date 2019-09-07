@@ -28,6 +28,16 @@ def load_tags(bot):
             bot.tags[alias.lower()] = tag
 
 
+def load_traits(bot):
+    with open('data/vndb-traits-2019-09-07.json', 'r') as dump:
+        traits = json.load(dump)
+
+    bot.traits = dict()
+    for trait in traits:
+        for alias in[trait['name']] + trait['aliases']:
+            bot.traits[alias.lower()] = trait
+
+
 async def create_embed(bot, data, description, channel):
     url = 'https://vndb.org/v{}'.format(data['id'])
     footer = 'Release date: {}'.format(data['released'])
@@ -112,7 +122,7 @@ async def search(bot, filter, channel):
         return
     elif data['description']:
         description = data['description'][:1000] + (data['description'][1000:] and '...')
-        description = re.sub('\[[F|f]rom.*]', '', description)
+        description = re.sub('\[.*?[F|f]rom.*]', '', description)
         description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
     else:
         description = 'No description.'
@@ -120,14 +130,14 @@ async def search(bot, filter, channel):
     await create_embed(bot, data, description, channel)
 
 
-async def rand(bot, channel):
+async def random_search(bot, channel):
     bot.sock.send(b'dbstats\x04')
     data = await receive_data(bot, channel, 'stats')
     filter = '(id = {})'.format(random.randint(1, data['vn']))
     await search(bot, filter, channel)
 
 
-async def tagsearch(bot, args, channel):
+async def tag_search(bot, args, channel):
     tags = list()
     for arg in args.lower().split(', '):
         if arg in bot.tags and bot.tags[arg]['searchable']:
@@ -171,10 +181,11 @@ async def character(bot, filter, channel):
     else:
         title = data['name']
 
+    print(data['description'])
     if data['description']:
         description = data['description'][:1000] + (data['description'][1000:] and '...')
         description = re.sub('\[[S|s]poiler]|\[/[S|s]poiler]', '||', description)
-        description = re.sub('\[[F|f]rom.*]', '', description)
+        description = re.sub('\[.*?[F|f]rom.*]', '', description)
         description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
         description += '||' if description.count('||') % 2 else ''
     else:
@@ -258,6 +269,20 @@ async def characterinfo(bot, filter, channel):
 
     await bot.post_embed(title=title, description=description, url=url, thumbnail=thumbnail,
         channel=channel)
+
+
+async def trait_search(bot, args, channel):
+    traits = list()
+    for arg in args.lower().split(', '):
+        if arg in bot.traits and bot.traits[arg]['searchable']:
+            traits.append(bot.traits[arg]['id'])
+
+    if not traits:
+        await channel.send('trait(s) not found')
+        return
+
+    filter = '(traits = {})'.format(json.dumps(traits))
+    await character(bot, filter, channel)
 
 
 async def help(bot, channel):

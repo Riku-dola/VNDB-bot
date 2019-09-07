@@ -8,6 +8,7 @@ class vndbot(discord.Client):
     async def on_connect(self):
         vndb.login(self)
         vndb.load_tags(self)
+        vndb.load_traits(self)
 
 
     async def on_disconnect(self):
@@ -49,11 +50,11 @@ class vndbot(discord.Client):
 
         aliases = ['random', 'rand', 'r']
         if cmd in aliases:
-            await vndb.rand(self, channel)
+            await vndb.random_search(self, channel)
 
         aliases = ['tagsearch', 'tags', 'tag', 'ts', 't']
         if cmd in aliases:
-            await vndb.tagsearch(self, args, channel)
+            await vndb.tag_search(self, args, channel)
 
         aliases = ['relations', 'related', 'rel']
         if cmd in aliases:
@@ -69,6 +70,10 @@ class vndbot(discord.Client):
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.characterinfo(self, filter, channel)
+
+        aliases = ['traitsearch', 'traits', 'trait', 'trs', 'tr']
+        if cmd in aliases:
+            await vndb.trait_search(self, args, channel)
 
         aliases = ['help', 'h']
         if cmd in aliases:
