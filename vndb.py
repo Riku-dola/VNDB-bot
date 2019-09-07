@@ -2,6 +2,7 @@ import json
 import random
 import re
 import socket
+import ssl
 import time
 
 
@@ -11,8 +12,11 @@ Helper functions
 
 
 def login(bot):
-    bot.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    bot.sock.connect(('api.vndb.org', 19534))
+    host = 'api.vndb.org'
+    port = 19535
+    cont = ssl.create_default_context()
+    sock = socket.create_connection((host, port))
+    bot.sock = cont.wrap_socket(sock, server_hostname=host)
     with open('tokens/vndb', 'rb') as token:
         bot.sock.send(token.read())
     print(bot.sock.recv(128).decode())
