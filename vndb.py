@@ -181,7 +181,6 @@ async def character(bot, filter, channel):
     else:
         title = data['name']
 
-    print(data['description'])
     if data['description']:
         description = data['description'][:1000] + (data['description'][1000:] and '...')
         description = re.sub('\[[S|s]poiler]|\[/[S|s]poiler]', '||', description)
