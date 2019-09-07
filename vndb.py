@@ -24,8 +24,7 @@ def load_tags(bot):
 
     bot.tags = dict()
     for tag in tags:
-        bot.tags[tag['name'].lower()] = tag
-        for alias in tag['aliases']:
+        for alias in[tag['name']] + tag['aliases']:
             bot.tags[alias.lower()] = tag
 
 
