@@ -42,7 +42,7 @@ def load_traits(bot):
             bot.traits[alias.lower()] = trait
 
 
-async def create_embed(bot, data, description, channel):
+async def embed_game(bot, data, description, channel):
     url = 'https://vndb.org/v{}'.format(data['id'])
     footer = 'Release date: {}'.format(data['released'])
     if data['original']:
@@ -131,7 +131,7 @@ async def search(bot, filter, channel):
     else:
         description = 'No description.'
 
-    await create_embed(bot, data, description, channel)
+    await embed_game(bot, data, description, channel)
 
 
 async def random_search(bot, channel):
@@ -169,7 +169,7 @@ async def relations(bot, filter, channel):
         description += r['title'] + '\n'
         description += 'https://vndb.org/v{}'.format(r['id']) + '\n\n'
 
-    await create_embed(bot, data, description, channel)
+    await embed_game(bot, data, description, channel)
 
 
 async def character(bot, filter, channel):

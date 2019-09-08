@@ -47,34 +47,42 @@ class vndbot(discord.Client):
         if cmd in aliases:
             filter = '(title ~ "{}")'.format(args)
             await vndb.search(self, filter, channel)
+            return
 
         aliases = ['random', 'rand', 'r']
         if cmd in aliases:
             await vndb.random_search(self, channel)
+            return
 
         aliases = ['tagsearch', 'tags', 'tag', 'ts', 't']
         if cmd in aliases:
             await vndb.tag_search(self, args, channel)
+            return
 
         aliases = ['relations', 'related', 'rel']
         if cmd in aliases:
             filter = '(title ~ "{}")'.format(args)
             await vndb.relations(self, filter, channel)
+            return
 
         aliases = ['character', 'char', 'c']
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.character(self, filter, channel)
+            return
 
         aliases = ['characterinfo', 'charinfo', 'ci', 'characterstats', 'charstats', 'cs']
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.characterinfo(self, filter, channel)
+            return
 
         aliases = ['traitsearch', 'traits', 'trait', 'trs', 'tr']
         if cmd in aliases:
             await vndb.trait_search(self, args, channel)
+            return
 
         aliases = ['help', 'h']
         if cmd in aliases:
             await vndb.help(self, channel)
+            return
