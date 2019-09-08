@@ -295,7 +295,7 @@ async def help(bot, channel):
 
 async def interject(message):
     if random.randint(0, 1):
-        msg = "I'd just like to interject for a moment. What you're referring to as eroge, is in fact, erogay, or as I've recently taken to calling it, ero plus gay."
+        msg = "I'd just like to interject for a moment. What you're referring to as _eroge_, is in fact, _erogay_, or as I've recently taken to calling it, ero _plus_ gay."
     else:
         msg = re.sub('eroge', '**erogay**', message.content)
     await message.channel.send(msg)
