@@ -13,6 +13,9 @@ Find all visual novels matching the specified title.
 `.vn tag [TAG] [, TAG] ...`
 Find a visual novel matching the specified tag(s).
 
+`.vn tagsearch [TITLE]`
+List all tags associated with the specified title.
+
 `.vn character [NAME]`
 Search for a character matching the specified name.
 
@@ -21,3 +24,6 @@ Get detailed information about a character matching the specified name.
 
 `.vn trait [TRAIT] [, TRAIT] ...`
 Find a character matching the specified traits(s).
+
+`.vn traitsearch [NAME]`
+List all traits associated with the specified name.

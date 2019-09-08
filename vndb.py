@@ -26,8 +26,9 @@ def load_tags(bot):
     with open('data/vndb-tags-2019-09-04.json', 'r') as dump:
         tags = json.load(dump)
 
-    bot.tags = dict()
+    bot.tags, bot.tag_ids = dict(), dict()
     for tag in tags:
+        bot.tag_ids[tag['id']] = tag['name']
         for alias in[tag['name']] + tag['aliases']:
             bot.tags[alias.lower()] = tag
 
@@ -36,15 +37,17 @@ def load_traits(bot):
     with open('data/vndb-traits-2019-09-07.json', 'r') as dump:
         traits = json.load(dump)
 
-    bot.traits = dict()
+    bot.traits, bot.trait_ids = dict(), dict()
     for trait in traits:
+        bot.trait_ids[trait['id']] = trait['name']
         for alias in[trait['name']] + trait['aliases']:
             bot.traits[alias.lower()] = trait
 
 
-async def embed_game(bot, data, description, channel):
+async def embed_game(bot, data, description, channel, footer=None):
     url = 'https://vndb.org/v{}'.format(data['id'])
-    footer = 'Release date: {}'.format(data['released'])
+    if not footer:
+        footer = 'Release date: {}'.format(data['released'])
     if data['original']:
         title = '{} ({})'.format(data['original'], data['title'])
     else:
@@ -56,6 +59,23 @@ async def embed_game(bot, data, description, channel):
 
     await bot.post_embed(title=title, description=description, url=url,
         thumbnail=thumbnail, footer=footer, channel=channel)
+
+
+async def embed_character(bot, data, description, channel, footer=None, thumbnail=None):
+    url = 'https://vndb.org/c{}'.format(data['id'])
+    if data['original']:
+        title = '{} ({})'.format(data['original'], data['name'])
+    else:
+        title = data['name']
+    if footer:
+        footer = footer
+    image = data['image']
+    if thumbnail:
+        image = None
+        thumbnail = data['image']
+
+    await bot.post_embed(title=title, description=description, url=url,
+        image=image, thumbnail=thumbnail, footer=footer, channel=channel)
 
 
 async def choose(bot, res, channel, type):
@@ -116,6 +136,19 @@ Commands
 '''
 
 
+async def help(bot, channel):
+    with open('data/help') as help:
+        await bot.post_embed(title='Commands:', description=help.read(), channel=channel)
+
+
+async def interject(message):
+    if random.randint(0, 1):
+        msg = "I'd just like to interject for a moment. What you're referring to as _eroge_, is in fact, _erogay_, or as I've recently taken to calling it, ero _plus_ gay."
+    else:
+        msg = re.sub('eroge', '**erogay**', message.content)
+    await message.channel.send(msg)
+
+
 async def search(bot, filter, channel):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
@@ -141,7 +174,7 @@ async def random_search(bot, channel):
     await search(bot, filter, channel)
 
 
-async def tag_search(bot, args, channel):
+async def search_by_tag(bot, args, channel):
     tags = list()
     for arg in args.lower().split(', '):
         if arg in bot.tags and bot.tags[arg]['searchable']:
@@ -153,6 +186,34 @@ async def tag_search(bot, args, channel):
 
     filter = '(tags = {})'.format(json.dumps(tags))
     await search(bot, filter, channel)
+
+
+async def tag_search(bot, filter, channel):
+    query = bytes('get vn basic,details,tags {}\x04'.format(filter), encoding='utf8')
+    bot.sock.send(query)
+    data = await receive_data(bot, channel, 'game')
+
+    if not data:
+        await channel.send('Visual novel not found.')
+        return
+    elif data['tags']:
+        description = list()
+        for tag in data['tags']:
+            if not tag[2]:
+                description.append(bot.tag_ids[tag[0]])
+            else:
+                description.append('||{}||'.format(bot.tag_ids[tag[0]]))
+        description = ', '.join(description)
+        footer = None
+        if len(description) > 1000:
+            description = description[:1000].rsplit(', ', 1)[0] + ', ...'
+            description += '||' if description.count('||') % 2 else ''
+            footer = 'Some tags not shown.'
+    else:
+        description = 'No tags found.'
+        footer = None
+
+    await embed_game(bot, data, description, channel, footer=footer)
 
 
 async def relations(bot, filter, channel):
@@ -172,7 +233,7 @@ async def relations(bot, filter, channel):
     await embed_game(bot, data, description, channel)
 
 
-async def character(bot, filter, channel):
+async def character_search(bot, filter, channel):
     query = bytes('get character basic,details {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
@@ -180,10 +241,6 @@ async def character(bot, filter, channel):
     if not data:
         await channel.send('Literally who?')
         return
-    elif data['original']:
-        title = '{} ({})'.format(data['original'], data['name'])
-    else:
-        title = data['name']
 
     if data['description']:
         description = data['description'][:1000] + (data['description'][1000:] and '...')
@@ -194,14 +251,10 @@ async def character(bot, filter, channel):
     else:
         description = 'No description.'
 
-    url = 'https://vndb.org/c{}'.format(data['id'])
-    image = data['image']
-
-    await bot.post_embed(title=title, description=description, url=url, image=image,
-        channel=channel)
+    await embed_character(bot, data, description, channel)
 
 
-async def characterinfo(bot, filter, channel):
+async def character_info(bot, filter, channel):
     query = bytes('get character basic,details,meas,voiced,vns {}\x04'.format(filter), encoding='utf8')
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
@@ -209,12 +262,8 @@ async def characterinfo(bot, filter, channel):
     if not data:
         await channel.send('Literally who?')
         return
-    elif data['original']:
-        title = '{} ({})'.format(data['original'], data['name'])
-    else:
-        title = data['name']
 
-    description = ''
+    description = str()
 
     if data['aliases']:
         description += '**Aliases:**\n'
@@ -267,14 +316,10 @@ async def characterinfo(bot, filter, channel):
                 description += '- {}\n'.format(actor['name'])
         description += '\n'
 
-    url = 'https://vndb.org/c{}'.format(data['id'])
-    thumbnail = data['image']
-
-    await bot.post_embed(title=title, description=description, url=url, thumbnail=thumbnail,
-        channel=channel)
+    await embed_character(bot, data, description, channel, thumbnail=True)
 
 
-async def trait_search(bot, args, channel):
+async def search_by_trait(bot, args, channel):
     traits = list()
     for arg in args.lower().split(', '):
         if arg in bot.traits and bot.traits[arg]['searchable']:
@@ -285,17 +330,31 @@ async def trait_search(bot, args, channel):
         return
 
     filter = '(traits = {})'.format(json.dumps(traits))
-    await character(bot, filter, channel)
+    await character_search(bot, filter, channel)
 
 
-async def help(bot, channel):
-    with open('data/help') as help:
-        await bot.post_embed(title='Commands:', description=help.read(), channel=channel)
+async def trait_search(bot, filter, channel):
+    query = bytes('get character basic,details,traits {}\x04'.format(filter), encoding='utf8')
+    bot.sock.send(query)
+    data = await receive_data(bot, channel, 'char')
 
-
-async def interject(message):
-    if random.randint(0, 1):
-        msg = "I'd just like to interject for a moment. What you're referring to as _eroge_, is in fact, _erogay_, or as I've recently taken to calling it, ero _plus_ gay."
+    if not data:
+        await channel.send('Literally who?')
+    elif data['traits']:
+        description = list()
+        for trait in data['traits']:
+            if not trait[1]:
+                description.append(bot.trait_ids[trait[0]])
+            else:
+                description.append('||{}||'.format(bot.trait_ids[trait[0]]))
+        description = ', '.join(description)
+        footer = None
+        if len(description) > 1000:
+            description = description[:1000].rsplit(', ', 1)[0] + ', ...'
+            description += '||' if description.count('||') % 2 else ''
+            footer = 'Some traits not shown.'
     else:
-        msg = re.sub('eroge', '**erogay**', message.content)
-    await message.channel.send(msg)
+        description = 'No traits found.'
+        footer = None
+
+    await embed_character(bot, data, description, channel, footer=footer, thumbnail=True)

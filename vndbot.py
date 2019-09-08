@@ -48,9 +48,14 @@ class vndbot(discord.Client):
         args = args[0] if args else None
         channel = message.channel
 
+        aliases = ['help', 'h']
+        if cmd in aliases:
+            await vndb.help(self, channel)
+            return
+
         aliases = ['search', 's', 'find', 'f']
         if cmd in aliases:
-            filter = '(title ~ "{}")'.format(args)
+            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.search(self, filter, channel)
             return
 
@@ -59,35 +64,42 @@ class vndbot(discord.Client):
             await vndb.random_search(self, channel)
             return
 
-        aliases = ['tagsearch', 'tags', 'tag', 'ts', 't']
+        aliases = ['tags', 'tag', 't']
         if cmd in aliases:
-            await vndb.tag_search(self, args, channel)
+            await vndb.search_by_tag(self, args, channel)
+            return
+
+        aliases = ['tagsearch', 'ts']
+        if cmd in aliases:
+            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
+            await vndb.tag_search(self, filter, channel)
             return
 
         aliases = ['relations', 'related', 'rel']
         if cmd in aliases:
-            filter = '(title ~ "{}")'.format(args)
+            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.relations(self, filter, channel)
             return
 
         aliases = ['character', 'char', 'c']
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.character(self, filter, channel)
+            await vndb.character_search(self, filter, channel)
             return
 
         aliases = ['characterinfo', 'charinfo', 'ci', 'characterstats', 'charstats', 'cs']
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.characterinfo(self, filter, channel)
+            await vndb.character_info(self, filter, channel)
             return
 
-        aliases = ['traitsearch', 'traits', 'trait', 'trs', 'tr']
+        aliases = ['traits', 'trait', 'tr']
         if cmd in aliases:
-            await vndb.trait_search(self, args, channel)
+            await vndb.search_by_trait(self, args, channel)
             return
 
-        aliases = ['help', 'h']
+        aliases = ['traitsearch', 'trs', 'sex']
         if cmd in aliases:
-            await vndb.help(self, channel)
+            filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
+            await vndb.trait_search(self, filter, channel)
             return
