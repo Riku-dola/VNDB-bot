@@ -151,6 +151,7 @@ async def interject(message):
 
 async def search(bot, filter, channel):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
+    login(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'game')
 
@@ -168,6 +169,7 @@ async def search(bot, filter, channel):
 
 
 async def random_search(bot, channel):
+    login(bot)
     bot.sock.send(b'dbstats\x04')
     data = await receive_data(bot, channel, 'stats')
     filter = '(id = {})'.format(random.randint(1, data['vn']))
@@ -190,6 +192,7 @@ async def search_by_tag(bot, args, channel):
 
 async def tag_search(bot, filter, channel):
     query = bytes('get vn basic,details,tags {}\x04'.format(filter), encoding='utf8')
+    login(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'game')
 
@@ -218,6 +221,7 @@ async def tag_search(bot, filter, channel):
 
 async def relations(bot, filter, channel):
     query = bytes('get vn basic,details,relations {}\x04'.format(filter), encoding='utf8')
+    login(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'relations')
 
@@ -235,6 +239,7 @@ async def relations(bot, filter, channel):
 
 async def character_search(bot, filter, channel):
     query = bytes('get character basic,details {}\x04'.format(filter), encoding='utf8')
+    login(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
 
@@ -256,6 +261,7 @@ async def character_search(bot, filter, channel):
 
 async def character_info(bot, filter, channel):
     query = bytes('get character basic,details,meas,voiced,vns {}\x04'.format(filter), encoding='utf8')
+    login(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
 
@@ -335,6 +341,7 @@ async def search_by_trait(bot, args, channel):
 
 async def trait_search(bot, filter, channel):
     query = bytes('get character basic,details,traits {}\x04'.format(filter), encoding='utf8')
+    login(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
 
