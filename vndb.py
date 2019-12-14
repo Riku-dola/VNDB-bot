@@ -1,4 +1,5 @@
 import json
+import bbcode
 import random
 import re
 import socket
@@ -67,6 +68,19 @@ def load_traits(bot):
         bot.trait_ids[trait['id']] = trait['name']
         for alias in[trait['name']] + trait['aliases']:
             bot.traits[alias.lower()] = trait
+
+
+def clean_description(description):
+    parser = bbcode.Parser()
+    # Strip bbcode
+    description = parser.strip(description)
+    # Remove sources
+    description = re.sub('\[.*?from.*]', '', description, flags=re.IGNORECASE)
+    # Strip trailing newlines/spaces
+    description = description.rstrip()
+    # Trim text to 1000 characters
+    description = description[:1000] + (description[1000:] and '...')
+    return description
 
 
 async def embed_game(bot, data, description, channel, footer=None):
@@ -162,9 +176,7 @@ async def search(bot, filter, channel):
         await channel.send('Visual novel not found.')
         return
     elif data['description']:
-        description = data['description'][:1000] + (data['description'][1000:] and '...')
-        description = re.sub('\[.*?[F|f]rom.*]', '', description)
-        description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
+        description = clean_description(data['description'])
     else:
         description = 'No description.'
 
@@ -234,8 +246,11 @@ Tag functions
 '''
 
 async def tag_define(bot, args, channel):
-    #TODO
-    return
+    title = bot.tags[args]['name']
+    description = clean_description(bot.tags[args]['description'])
+    url = 'https://vndb.org/g{}'.format(bot.tags[args]['id'])
+    footer = 'Aliases: {}'.format(', '.join(bot.tags[args]['aliases'])) if bot.tags[args]['aliases'] else None
+    await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
 
 
 async def tag_search(bot, args, channel):
@@ -377,8 +392,11 @@ Trait functions
 '''
 
 async def trait_define(bot, args, channel):
-    #TODO
-    return
+    title = bot.traits[args]['name']
+    description = clean_description(bot.traits[args]['description'])
+    url = 'https://vndb.org/g{}'.format(bot.traits[args]['id'])
+    footer = 'Aliases: {}'.format(', '.join(bot.traits[args]['aliases'])) if bot.traits[args]['aliases'] else None
+    await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
 
 
 async def trait_search(bot, args, channel):
