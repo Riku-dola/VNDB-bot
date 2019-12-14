@@ -6,7 +6,6 @@ class vndbot(discord.Client):
 
 
     async def on_connect(self):
-        vndb.login(self)
         vndb.load_tags(self)
         vndb.load_traits(self)
 
@@ -34,7 +33,7 @@ class vndbot(discord.Client):
             return
 
         if message.content == '.reconnect' and message.author.id == 138581816872271872:
-            vndb.login(self)
+            vndb.connect(self)
             await message.channel.send('Successfully reconnected.')
             return
 
@@ -53,53 +52,95 @@ class vndbot(discord.Client):
             await vndb.help(self, channel)
             return
 
+
+        '''
+        Game commands
+        '''
+
         aliases = ['search', 's', 'find', 'f']
+        # Search by name, find description
         if cmd in aliases:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.search(self, filter, channel)
             return
 
-        aliases = ['random', 'rand', 'r']
+        aliases = ['gettags', 'gt']
+        # Search by name, find tags
         if cmd in aliases:
-            await vndb.random_search(self, channel)
+            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
+            await vndb.get_tags(self, filter, channel)
             return
 
-        aliases = ['tags', 'tag', 't']
+        aliases = ['getrelations', 'getrelated', 'gr', 'relations', 'related', 'rel']
+        # Search by name, find related novels
         if cmd in aliases:
-            await vndb.search_by_tag(self, args, channel)
+            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
+            await vndb.get_relations(self, filter, channel)
+            return
+
+        aliases = ['random', 'rand', 'r']
+        # Get random novel
+        if cmd in aliases:
+            await vndb.get_random(self, channel)
+            return
+
+
+        '''
+        Tag commands
+        '''
+
+        aliases = ['tagdefine', 'td']
+        # Search by tag, get definition
+        if cmd in aliases:
+            await vndb.tag_define(self, args, channel)
             return
 
         aliases = ['tagsearch', 'ts']
+        # Search by tag, get novels
         if cmd in aliases:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.tag_search(self, filter, channel)
             return
 
-        aliases = ['relations', 'related', 'rel']
-        if cmd in aliases:
-            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.relations(self, filter, channel)
-            return
+
+        '''
+        Character commands
+        '''
 
         aliases = ['character', 'char', 'c']
+        # Search by name, get description
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.character_search(self, filter, channel)
+            await vndb.search_character(self, filter, channel)
             return
 
-        aliases = ['characterinfo', 'charinfo', 'ci', 'characterstats', 'charstats', 'cs']
+        aliases = ['getcharinfo', 'charinfo', 'gc', 'gi']
+        # Search by name, get info
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.character_info(self, filter, channel)
+            await vndb.get_charinfo(self, filter, channel)
             return
 
-        aliases = ['traits', 'trait', 'tr']
-        if cmd in aliases:
-            await vndb.search_by_trait(self, args, channel)
-            return
-
-        aliases = ['traitsearch', 'trs', 'sex']
+        aliases = ['gettraits', 'gtr', 'sex']
+        # Search by name, get traits
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.trait_search(self, filter, channel)
+            await vndb.get_traits(self, filter, channel)
+            return
+
+
+        '''
+        Trait commands
+        '''
+
+        aliases = ['traitdefine', 'trd']
+        # Search by trait, get definition
+        if cmd in aliases:
+            await vndb.trait_define(self, args, channel)
+            return
+
+        aliases = ['traitsearch', 'trs']
+        # Search by trait, get character
+        if cmd in aliases:
+            await vndb.trait_search(self, args, channel)
             return

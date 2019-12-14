@@ -1,29 +1,40 @@
+__**General:**__
 `.vn help`
 Display this help dialog.
 
+__**Game:**__
 `.vn search [TITLE]`
-Search for a visual novel.
+Search by visual novel title and find its description.
+
+`.vn gettags [TITLE]`
+Search by visual novel title and find its tags.
+
+`.vn getrelations [TITLE]`
+Search by visual novel title and find its relations.
 
 `.vn random`
-Get a random visual novel.
+Find a random visual novel.
 
-`.vn relations [TITLE]`
-Find all visual novels matching the specified title.
+__**Tag:**__
+`.vn tagdefine [TAG]`
+Search by tag name and find its definition.
 
 `.vn tag [TAG] [, TAG] ...`
-Find a visual novel matching the specified tag(s).
+Search by tag name(s) and find visual novels containing it.
 
-`.vn tagsearch [TITLE]`
-List all tags associated with the specified title.
-
+__**Character:**__
 `.vn character [NAME]`
-Search for a character matching the specified name.
+Search by character name and find their summary.
 
-`.vn characterinfo [NAME]`
-Get detailed information about a character matching the specified name.
+`.vn getcharinfo [NAME]`
+Search by character name and find their information.
+
+`.vn gettraits [NAME]`
+Search by character name and find their traits.
+
+__**Trait:**__
+`.vn traitdefine [TAG]`
+Search by trait name and find its definition.
 
 `.vn trait [TRAIT] [, TRAIT] ...`
-Find a character matching the specified traits(s).
-
-`.vn traitsearch [NAME]`
-List all traits associated with the specified name.
+Search by trait name(s) and find characters containing it.

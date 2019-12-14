@@ -10,8 +10,7 @@ import time
 Helper functions
 '''
 
-
-def login(bot):
+def connect(bot):
     host = 'api.vndb.org'
     port = 19535
     cont = ssl.create_default_context()
@@ -19,11 +18,37 @@ def login(bot):
     bot.sock = cont.wrap_socket(sock, server_hostname=host)
     with open('tokens/vndb', 'rb') as token:
         bot.sock.send(token.read())
-    print(bot.sock.recv(128).decode())
+    bot.sock.recv(128)
+
+
+async def receive_data(bot, channel, type):
+    # I want to do this loop better
+    res = bot.sock.recv(2048)
+    while res[-1:] != b'\x04':
+        res += bot.sock.recv(2048)
+
+    response, res = res.decode().split(' ', 1)
+    res = json.loads(res[:-1])
+
+    if response == 'error' and res['id'] == 'throttled':
+        await channel.send('Too many requests. Sleeping for {} seconds.'.format(res['fullwait']))
+        time.sleep(res['fullwait'])
+        raise Exception
+
+    if type == 'stats':
+        return res
+    elif not res['num']:
+        return None
+    elif type == 'relations':
+        return res['items'][0]
+    elif res['num'] == 1:
+        return res['items'][0]
+    else:
+        return await choose(bot, res, channel, type)
 
 
 def load_tags(bot):
-    with open('data/vndb-tags-2019-09-04.json', 'r') as dump:
+    with open('data/vndb-tags-2019-12-13.json', 'r') as dump:
         tags = json.load(dump)
 
     bot.tags, bot.tag_ids = dict(), dict()
@@ -34,7 +59,7 @@ def load_tags(bot):
 
 
 def load_traits(bot):
-    with open('data/vndb-traits-2019-09-07.json', 'r') as dump:
+    with open('data/vndb-traits-2019-12-13.json', 'r') as dump:
         traits = json.load(dump)
 
     bot.traits, bot.trait_ids = dict(), dict()
@@ -105,36 +130,9 @@ async def choose(bot, res, channel, type):
     return res['items'][index]
 
 
-async def receive_data(bot, channel, type):
-    # I want to do this loop better
-    res = bot.sock.recv(2048)
-    while res[-1:] != b'\x04':
-        res += bot.sock.recv(2048)
-
-    response, res = res.decode().split(' ', 1)
-    res = json.loads(res[:-1])
-
-    if response == 'error' and res['id'] == 'throttled':
-        await channel.send('Too many requests. Sleeping for {} seconds.'.format(res['fullwait']))
-        time.sleep(res['fullwait'])
-        raise Exception
-
-    if type == 'stats':
-        return res
-    elif not res['num']:
-        return None
-    elif type == 'relations':
-        return res['items'][0]
-    elif res['num'] == 1:
-        return res['items'][0]
-    else:
-        return await choose(bot, res, channel, type)
-
-
 '''
-Commands
+General Functions
 '''
-
 
 async def help(bot, channel):
     with open('data/help') as help:
@@ -149,9 +147,14 @@ async def interject(message):
     await message.channel.send(msg)
 
 
+'''
+Game functions
+'''
+
+# Search by name, find description
 async def search(bot, filter, channel):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
-    login(bot)
+    connect(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'game')
 
@@ -168,31 +171,10 @@ async def search(bot, filter, channel):
     await embed_game(bot, data, description, channel)
 
 
-async def random_search(bot, channel):
-    login(bot)
-    bot.sock.send(b'dbstats\x04')
-    data = await receive_data(bot, channel, 'stats')
-    filter = '(id = {})'.format(random.randint(1, data['vn']))
-    await search(bot, filter, channel)
-
-
-async def search_by_tag(bot, args, channel):
-    tags = list()
-    for arg in args.lower().split(', '):
-        if arg in bot.tags and bot.tags[arg]['searchable']:
-            tags.append(bot.tags[arg]['id'])
-
-    if not tags:
-        await channel.send('Tag(s) not found')
-        return
-
-    filter = '(tags = {})'.format(json.dumps(tags))
-    await search(bot, filter, channel)
-
-
-async def tag_search(bot, filter, channel):
+# Search by name, find tags
+async def get_tags(bot, filter, channel):
     query = bytes('get vn basic,details,tags {}\x04'.format(filter), encoding='utf8')
-    login(bot)
+    connect(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'game')
 
@@ -219,9 +201,10 @@ async def tag_search(bot, filter, channel):
     await embed_game(bot, data, description, channel, footer=footer)
 
 
-async def relations(bot, filter, channel):
+# Search by name, find related novels
+async def get_relations(bot, filter, channel):
     query = bytes('get vn basic,details,relations {}\x04'.format(filter), encoding='utf8')
-    login(bot)
+    connect(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'relations')
 
@@ -237,9 +220,45 @@ async def relations(bot, filter, channel):
     await embed_game(bot, data, description, channel)
 
 
-async def character_search(bot, filter, channel):
+# Get random novel
+async def get_random(bot, channel):
+    connect(bot)
+    bot.sock.send(b'dbstats\x04')
+    data = await receive_data(bot, channel, 'stats')
+    filter = '(id = {})'.format(random.randint(1, data['vn']))
+    await search(bot, filter, channel)
+
+
+'''
+Tag functions
+'''
+
+async def tag_define(bot, args, channel):
+    #TODO
+    return
+
+
+async def tag_search(bot, args, channel):
+    tags = list()
+    for arg in args.lower().split(', '):
+        if arg in bot.tags and bot.tags[arg]['searchable']:
+            tags.append(bot.tags[arg]['id'])
+
+    if not tags:
+        await channel.send('Tag(s) not found')
+        return
+
+    filter = '(tags = {})'.format(json.dumps(tags))
+    await search(bot, filter, channel)
+
+
+'''
+Character functions
+'''
+
+async def search_character(bot, filter, channel):
     query = bytes('get character basic,details {}\x04'.format(filter), encoding='utf8')
-    login(bot)
+    connect(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
 
@@ -259,9 +278,9 @@ async def character_search(bot, filter, channel):
     await embed_character(bot, data, description, channel)
 
 
-async def character_info(bot, filter, channel):
+async def get_charinfo(bot, filter, channel):
     query = bytes('get character basic,details,meas,voiced,vns {}\x04'.format(filter), encoding='utf8')
-    login(bot)
+    connect(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
 
@@ -325,23 +344,9 @@ async def character_info(bot, filter, channel):
     await embed_character(bot, data, description, channel, thumbnail=True)
 
 
-async def search_by_trait(bot, args, channel):
-    traits = list()
-    for arg in args.lower().split(', '):
-        if arg in bot.traits and bot.traits[arg]['searchable']:
-            traits.append(bot.traits[arg]['id'])
-
-    if not traits:
-        await channel.send('trait(s) not found')
-        return
-
-    filter = '(traits = {})'.format(json.dumps(traits))
-    await character_search(bot, filter, channel)
-
-
-async def trait_search(bot, filter, channel):
+async def get_traits(bot, filter, channel):
     query = bytes('get character basic,details,traits {}\x04'.format(filter), encoding='utf8')
-    login(bot)
+    connect(bot)
     bot.sock.send(query)
     data = await receive_data(bot, channel, 'char')
 
@@ -365,3 +370,26 @@ async def trait_search(bot, filter, channel):
         footer = None
 
     await embed_character(bot, data, description, channel, footer=footer, thumbnail=True)
+
+
+'''
+Trait functions
+'''
+
+async def trait_define(bot, args, channel):
+    #TODO
+    return
+
+
+async def trait_search(bot, args, channel):
+    traits = list()
+    for arg in args.lower().split(', '):
+        if arg in bot.traits and bot.traits[arg]['searchable']:
+            traits.append(bot.traits[arg]['id'])
+
+    if not traits:
+        await channel.send('trait(s) not found')
+        return
+
+    filter = '(traits = {})'.format(json.dumps(traits))
+    await character_search(bot, filter, channel)
