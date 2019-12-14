@@ -1,4 +1,3 @@
-__**General:**__
 `.vn help`
 Display this help dialog.
 
@@ -19,7 +18,7 @@ __**Tag:**__
 `.vn tagdefine [TAG]`
 Search by tag name and find its definition.
 
-`.vn tag [TAG] [, TAG] ...`
+`.vn tagsearch [TAG] [, TAG] ...`
 Search by tag name(s) and find visual novels containing it.
 
 __**Character:**__
@@ -36,5 +35,5 @@ __**Trait:**__
 `.vn traitdefine [TAG]`
 Search by trait name and find its definition.
 
-`.vn trait [TRAIT] [, TRAIT] ...`
+`.vn traitsearch [TRAIT] [, TRAIT] ...`
 Search by trait name(s) and find characters containing it.
