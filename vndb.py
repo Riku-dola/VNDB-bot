@@ -71,15 +71,18 @@ def load_traits(bot):
 
 
 def clean_description(description):
-    parser = bbcode.Parser()
+    # Format spoilers
+    description = re.sub('\[/?spoiler]', '||', description, flags=re.IGNORECASE)
     # Strip bbcode
-    description = parser.strip(description)
+    description = bbcode.Parser().strip(description)
     # Remove sources
     description = re.sub('\[.*?from.*]', '', description, flags=re.IGNORECASE)
     # Strip trailing newlines/spaces
     description = description.rstrip()
     # Trim text to 1000 characters
     description = description[:1000] + (description[1000:] and '...')
+    # Restore closing spoiler tag if trimmed
+    description += '||' if description.count('||') % 2 else ''
     return description
 
 
@@ -282,11 +285,7 @@ async def search_character(bot, filter, channel):
         return
 
     if data['description']:
-        description = data['description'][:1000] + (data['description'][1000:] and '...')
-        description = re.sub('\[[S|s]poiler]|\[/[S|s]poiler]', '||', description)
-        description = re.sub('\[.*?[F|f]rom.*]', '', description)
-        description = re.sub('\[.*?](.*?)\[/.*?]', '\g<1>', description)
-        description += '||' if description.count('||') % 2 else ''
+        description = clean_description(data['description'])
     else:
         description = 'No description.'
 
@@ -410,4 +409,4 @@ async def trait_search(bot, args, channel):
         return
 
     filter = '(traits = {})'.format(json.dumps(traits))
-    await character_search(bot, filter, channel)
+    await search_character(bot, filter, channel)
