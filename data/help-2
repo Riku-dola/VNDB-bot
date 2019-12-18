@@ -1,0 +1,11 @@
+`.vn search [TITLE]`
+Search by visual novel title and find its description.
+
+`.vn gettags [TITLE]`
+Search by visual novel title and find its tags.
+
+`.vn getrelations [TITLE]`
+Search by visual novel title and find its relations.
+
+`.vn random`
+Find a random visual novel.

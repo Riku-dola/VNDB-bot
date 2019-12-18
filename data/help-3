@@ -1,0 +1,5 @@
+`.vn tagdefine [TAG]`
+Search by tag name and find its definition.
+
+`.vn tagsearch [TAG] [, TAG] ...`
+Search by tag name(s) and find visual novels containing it.

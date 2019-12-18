@@ -1,0 +1,8 @@
+`.vn character [NAME]`
+Search by character name and find their summary.
+
+`.vn getcharinfo [NAME]`
+Search by character name and find their information.
+
+`.vn gettraits [NAME]`
+Search by character name and find their traits.

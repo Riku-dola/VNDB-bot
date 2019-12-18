@@ -1,0 +1,5 @@
+`.vn traitdefine [TAG]`
+Search by trait name and find its definition.
+
+`.vn traitsearch [TRAIT] [, TRAIT] ...`
+Search by trait name(s) and find characters containing it.

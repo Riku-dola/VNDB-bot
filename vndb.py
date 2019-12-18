@@ -152,8 +152,32 @@ General Functions
 '''
 
 async def help(bot, channel):
-    with open('data/help') as help:
-        await bot.post_embed(title='Commands:', description=help.read(), channel=channel)
+    with open('data/help-0') as help:
+        await bot.post_embed(author='Help:', description=help.read(),
+                channel=channel, icon=bot.user.avatar_url)
+
+    def check(m):
+        return m.channel == channel
+
+    msg = await bot.wait_for('message', check=check, timeout=10)
+    idx = int(msg.content)
+
+    if idx == 1:
+        with open('data/help-1') as help:
+            await bot.post_embed(author='Information:', description=help.read(),
+                    channel=channel, thumbnail=bot.user.avatar_url)
+    elif idx == 2:
+        with open('data/help-2') as help:
+            await bot.post_embed(title='Game Commands:', description=help.read(), channel=channel)
+    elif idx == 3:
+        with open('data/help-3') as help:
+            await bot.post_embed(title='Tag Commands:', description=help.read(), channel=channel)
+    elif idx == 4:
+        with open('data/help-4') as help:
+            await bot.post_embed(title='Character Commands:', description=help.read(), channel=channel)
+    elif idx == 5:
+        with open('data/help-5') as help:
+            await bot.post_embed(title='Trait Commands:', description=help.read(), channel=channel)
 
 
 async def interject(message):
