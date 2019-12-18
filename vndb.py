@@ -158,7 +158,7 @@ async def choose(bot, res, channel, type):
     await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
 
     def check(m):
-        return m.channel == channel
+        return m.channel == channel and m.author != bot.user
 
     msg = await bot.wait_for('message', timeout=10)
     index = int(msg.content) - 1
@@ -177,7 +177,7 @@ async def help(bot, channel):
                 channel=channel, icon=bot.user.avatar_url)
 
     def check(m):
-        return m.channel == channel
+        return m.channel == channel and m.author != bot.user
 
     msg = await bot.wait_for('message', check=check, timeout=10)
     idx = int(msg.content)
