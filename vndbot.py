@@ -71,6 +71,12 @@ class vndbot(discord.Client):
             await vndb.get_tags(self, filter, channel)
             return
 
+        aliases = ['getcharacters', 'getchars', 'gc']
+        # Search by name, find related novels
+        if cmd in aliases:
+            await vndb.get_characters(self, args, channel)
+            return
+
         aliases = ['getrelations', 'getrelated', 'gr', 'relations', 'related', 'rel']
         # Search by name, find related novels
         if cmd in aliases:
@@ -114,7 +120,7 @@ class vndbot(discord.Client):
             await vndb.search_character(self, filter, channel)
             return
 
-        aliases = ['getcharinfo', 'charinfo', 'gc', 'gi']
+        aliases = ['getcharinfo', 'charinfo', 'gci', 'gi']
         # Search by name, get info
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)

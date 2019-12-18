@@ -260,6 +260,25 @@ async def get_tags(bot, filter, channel):
     await embed_game(bot, data, description, channel, footer=footer)
 
 
+# Search by name, find characters
+async def get_characters(bot, args, channel):
+    # Search by VN title to find the ID
+    filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
+    query = bytes('get vn basic {}\x04'.format(filter), encoding='utf8')
+    connect(bot)
+    bot.sock.send(query)
+    game = await receive_data(bot, channel, 'game')
+
+    # Throw error if unexpected return value
+    if not game:
+        await channel.send('API Error.')
+        return
+
+    # Search characters matching game ID
+    filter = '(vn = "{}")'.format(game['id'])
+    await search_character(bot, filter, channel)
+
+
 # Search by name, find related novels
 async def get_relations(bot, filter, channel):
     query = bytes('get vn basic,details,relations {}\x04'.format(filter), encoding='utf8')
