@@ -4,6 +4,9 @@ Search by visual novel title and find its description.
 `.vn gettags [TITLE]`
 Search by visual novel title and find its tags.
 
+`.vn getcharacters [TITLE]`
+Search by visual novel title and find its characters.
+
 `.vn getrelations [TITLE]`
 Search by visual novel title and find its relations.
 
