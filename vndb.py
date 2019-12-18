@@ -98,6 +98,9 @@ def clean_description(description):
     description = description[:1000] + (description[1000:] and '...')
     # Restore closing spoiler tag if trimmed
     description += '||' if description.count('||') % 2 else ''
+    # Remove extraneous newlines
+    description = re.sub(r'\n\s*\n', '\n\n', description)
+
     return description
 
 
