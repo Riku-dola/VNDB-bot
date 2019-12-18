@@ -11,38 +11,53 @@ import time
 Helper functions
 '''
 
+# Initiate a TCP connection to the VNDB API
+# Must be called prior to every request
 def connect(bot):
     host = 'api.vndb.org'
     port = 19535
     cont = ssl.create_default_context()
     sock = socket.create_connection((host, port))
     bot.sock = cont.wrap_socket(sock, server_hostname=host)
+
+    # Send credentials to authenticate
     with open('tokens/vndb', 'rb') as token:
         bot.sock.send(token.read())
+
+    # Receive response
     bot.sock.recv(128)
 
 
+# Read response from the open TCP connection
 async def receive_data(bot, channel, type):
-    # I want to do this loop better
-    res = bot.sock.recv(2048)
+    # Read until the End of Transmission character is found
+    chunk = 4096  # 4KB
+    res = bot.sock.recv(chunk)
     while res[-1:] != b'\x04':
-        res += bot.sock.recv(2048)
+        res += bot.sock.recv(chunk)
 
+    # Parse response
     response, res = res.decode().split(' ', 1)
     res = json.loads(res[:-1])
 
+    # Sleep if API limit has been reached
     if response == 'error' and res['id'] == 'throttled':
         await channel.send('Too many requests. Sleeping for {} seconds.'.format(res['fullwait']))
         time.sleep(res['fullwait'])
         raise Exception
 
+    # Return the raw dict if requesting VNDB stats
+    # Used to find the number of VNs to rand()
     if type == 'stats':
         return res
+    # If there are no results, retur nothing
     elif not res['num']:
         return None
-    elif type == 'relations':
-        return res['items'][0]
+    # If there is only one result, return it
     elif res['num'] == 1:
+        return res['items'][0]
+    # If looking for relations, assume the first result is correct and return it
+    elif type == 'relations':
         return res['items'][0]
     else:
         return await choose(bot, res, channel, type)
