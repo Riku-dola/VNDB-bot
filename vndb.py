@@ -123,6 +123,7 @@ async def embed_character(bot, data, description, channel, footer=None, thumbnai
 async def choose(bot, res, channel, type):
     title = 'Which did you mean?'
     description = str()
+
     if type == 'game':
         key = 'title'
     elif type == 'char':
@@ -133,18 +134,22 @@ async def choose(bot, res, channel, type):
             description += '**[{}]** {} ({})\n'.format(i + 1, res['items'][i][key], res['items'][i]['original'])
         else:
             description += '**[{}]** {}\n'.format(i + 1, res['items'][i][key])
+
     if res['num'] > 9:
         footer = 'Some search results not shown. Refine your search terms to display them.'
     else:
         footer = None
+
     await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
+
+    def check(m):
+        return m.channel == channel
+
     msg = await bot.wait_for('message', timeout=10)
-    while not msg.channel == channel:
-        msg = await bot.wait_for('message', timeout=10)
     index = int(msg.content) - 1
-    if not 0 <= index <= min(9, res['num']):
-        return None
-    return res['items'][index]
+
+    if 0 <= index <= min(9, res['num']):
+        return res['items'][index]
 
 
 '''
