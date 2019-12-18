@@ -91,7 +91,7 @@ async def embed_game(bot, data, description, channel, footer=None):
     if not footer:
         footer = 'Release date: {}'.format(data['released'])
     if data['original']:
-        title = '{} ({})'.format(data['original'], data['title'])
+        title = '{} ({})'.format(data['title'], data['original'])
     else:
         title = data['title']
     if not data['image_nsfw']:
@@ -106,7 +106,7 @@ async def embed_game(bot, data, description, channel, footer=None):
 async def embed_character(bot, data, description, channel, footer=None, thumbnail=None):
     url = 'https://vndb.org/c{}'.format(data['id'])
     if data['original']:
-        title = '{} ({})'.format(data['original'], data['name'])
+        title = '{} ({})'.format(data['name'], data['original'])
     else:
         title = data['name']
     if footer:
@@ -130,7 +130,7 @@ async def choose(bot, res, channel, type):
 
     for i in range(min(9, res['num'])):
         if type == 'char' and res['items'][i]['original']:
-            description += '**[{}]** {} ({})\n'.format(i + 1, res['items'][i]['original'], res['items'][i][key])
+            description += '**[{}]** {} ({})\n'.format(i + 1, res['items'][i][key], res['items'][i]['original'])
         else:
             description += '**[{}]** {}\n'.format(i + 1, res['items'][i][key])
     if res['num'] > 9:
