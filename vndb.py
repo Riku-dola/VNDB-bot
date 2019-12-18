@@ -272,9 +272,9 @@ async def get_characters(bot, args, channel):
     bot.sock.send(query)
     game = await receive_data(bot, channel, 'game')
 
-    # Throw error if unexpected return value
+    # Exit if game not found
     if not game:
-        await channel.send('API Error.')
+        await channel.send('Visual novel not found.')
         return
 
     # Search characters matching game ID
