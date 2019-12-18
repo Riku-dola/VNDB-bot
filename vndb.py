@@ -249,11 +249,14 @@ Tag functions
 '''
 
 async def tag_define(bot, args, channel):
-    title = bot.tags[args]['name']
-    description = clean_description(bot.tags[args]['description'])
-    url = 'https://vndb.org/g{}'.format(bot.tags[args]['id'])
-    footer = 'Aliases: {}'.format(', '.join(bot.tags[args]['aliases'])) if bot.tags[args]['aliases'] else None
-    await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
+    try:
+        title = bot.tags[args]['name']
+        description = clean_description(bot.tags[args]['description'])
+        url = 'https://vndb.org/g{}'.format(bot.tags[args]['id'])
+        footer = 'Aliases: {}'.format(', '.join(bot.tags[args]['aliases'])) if bot.tags[args]['aliases'] else None
+        await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
+    except KeyError:
+        await channel.send('Tag not found.')
 
 
 async def tag_search(bot, args, channel):
@@ -263,7 +266,7 @@ async def tag_search(bot, args, channel):
             tags.append(bot.tags[arg]['id'])
 
     if not tags:
-        await channel.send('Tag(s) not found')
+        await channel.send('Tag(s) not found.')
         return
 
     filter = '(tags = {})'.format(json.dumps(tags))
@@ -391,11 +394,14 @@ Trait functions
 '''
 
 async def trait_define(bot, args, channel):
-    title = bot.traits[args]['name']
-    description = clean_description(bot.traits[args]['description'])
-    url = 'https://vndb.org/g{}'.format(bot.traits[args]['id'])
-    footer = 'Aliases: {}'.format(', '.join(bot.traits[args]['aliases'])) if bot.traits[args]['aliases'] else None
-    await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
+    try:
+        title = bot.traits[args]['name']
+        description = clean_description(bot.traits[args]['description'])
+        url = 'https://vndb.org/g{}'.format(bot.traits[args]['id'])
+        footer = 'Aliases: {}'.format(', '.join(bot.traits[args]['aliases'])) if bot.traits[args]['aliases'] else None
+        await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
+    except KeyError:
+        await channel.send('Tag not found.')
 
 
 async def trait_search(bot, args, channel):
@@ -405,7 +411,7 @@ async def trait_search(bot, args, channel):
             traits.append(bot.traits[arg]['id'])
 
     if not traits:
-        await channel.send('trait(s) not found')
+        await channel.send('Trait(s) not found'.)
         return
 
     filter = '(traits = {})'.format(json.dumps(traits))
