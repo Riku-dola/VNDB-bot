@@ -411,7 +411,7 @@ async def trait_search(bot, args, channel):
             traits.append(bot.traits[arg]['id'])
 
     if not traits:
-        await channel.send('Trait(s) not found'.)
+        await channel.send('Trait(s) not found.')
         return
 
     filter = '(traits = {})'.format(json.dumps(traits))
