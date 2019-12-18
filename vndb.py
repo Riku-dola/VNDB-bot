@@ -184,7 +184,7 @@ async def help(bot, channel):
 
     if idx == 1:
         with open('data/help-1') as help:
-            await bot.post_embed(author='Information:', description=help.read(),
+            await bot.post_embed(title='Information:', description=help.read(),
                     channel=channel, thumbnail=bot.user.avatar_url)
     elif idx == 2:
         with open('data/help-2') as help:
