@@ -61,30 +61,38 @@ async def receive_data(bot, channel, author=None, raw=False, jp=False):
 
 
 async def choose_prompt(bot, data, channel, author, jp=False):
+    # Initialise variables for embed
     title = 'Which did you mean?'
     description = str()
 
+    # Choose the correct dict key depending on data type
     key = 'title' if 'title' in data['items'][0].keys() else 'name'
 
+    # Build the list of options
     for i in range(min(9, data['num'])):
         if jp:
             description += '**[{}]** {} ({})\n'.format(i + 1, data['items'][i][key], data['items'][i]['original'])
         else:
             description += '**[{}]** {}\n'.format(i + 1, data['items'][i][key])
 
+    # Initialise the footer based on the number of options
     if data['num'] > 9:
         footer = 'Some search results not shown. Refine your search terms to display them.'
     else:
         footer = None
 
+    # Display the prompt
     await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
 
+    # Ensure responses are not sniped by other users/channel's messages
     def check(m):
         return m.channel == channel and m.author == author
 
+    # Receive the response
     msg = await bot.wait_for('message', check=check, timeout=10)
-    index = int(msg.content) - 1
+    index = int(msg.content[0]) - 1
 
+    # Return the chosen object if valid
     if 0 <= index <= min(9, data['num']):
         return data['items'][index]
 
@@ -178,7 +186,7 @@ async def help(bot, channel):
         return m.channel == channel and m.author != bot.user
 
     msg = await bot.wait_for('message', check=check, timeout=10)
-    idx = int(msg.content)
+    idx = int(msg.content[0])
 
     if idx == 1:
         with open('data/help-1') as help:
