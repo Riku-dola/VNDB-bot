@@ -46,6 +46,7 @@ class vndbot(discord.Client):
         _, cmd, *args = message.content.lower().split(' ', 2)
         args = args[0] if args else None
         channel = message.channel
+        author = message.author
 
         aliases = ['help', 'h']
         if cmd in aliases:
@@ -61,27 +62,27 @@ class vndbot(discord.Client):
         # Search by name, find description
         if cmd in aliases:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.search(self, filter, channel)
+            await vndb.search(self, filter, channel, author=author)
             return
 
         aliases = ['gettags', 'gt']
         # Search by name, find tags
         if cmd in aliases:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.get_tags(self, filter, channel)
+            await vndb.get_tags(self, filter, channel, author)
             return
 
         aliases = ['getcharacters', 'getchars', 'gc']
         # Search by name, find related novels
         if cmd in aliases:
-            await vndb.get_characters(self, args, channel)
+            await vndb.get_characters(self, args, channel, author)
             return
 
         aliases = ['getrelations', 'getrelated', 'gr', 'relations', 'related', 'rel']
         # Search by name, find related novels
         if cmd in aliases:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.get_relations(self, filter, channel)
+            await vndb.get_relations(self, filter, channel, author)
             return
 
         aliases = ['random', 'rand', 'r']
@@ -105,7 +106,7 @@ class vndbot(discord.Client):
         # Search by tag, get novels
         if cmd in aliases:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.tag_search(self, filter, channel)
+            await vndb.tag_search(self, filter, channel, author)
             return
 
 
@@ -117,21 +118,21 @@ class vndbot(discord.Client):
         # Search by name, get description
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.search_character(self, filter, channel)
+            await vndb.search_character(self, filter, channel, author)
             return
 
         aliases = ['getcharinfo', 'charinfo', 'gci', 'gi']
         # Search by name, get info
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.get_charinfo(self, filter, channel)
+            await vndb.get_charinfo(self, filter, channel, author)
             return
 
         aliases = ['gettraits', 'gtr', 'sex']
         # Search by name, get traits
         if cmd in aliases:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.get_traits(self, filter, channel)
+            await vndb.get_traits(self, filter, channel, author)
             return
 
 
@@ -148,5 +149,8 @@ class vndbot(discord.Client):
         aliases = ['traitsearch', 'trs']
         # Search by trait, get character
         if cmd in aliases:
-            await vndb.trait_search(self, args, channel)
+            await vndb.trait_search(self, args, channel, author)
             return
+
+        await channel.send('Invalid command. Try `.vn help`')
+        return

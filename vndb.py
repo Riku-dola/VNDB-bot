@@ -13,7 +13,8 @@ Helper functions
 
 # Initiate a TCP connection to the VNDB API
 # Must be called prior to every request
-def connect(bot): host = 'api.vndb.org'
+def connect(bot):
+    host = 'api.vndb.org'
     port = 19535
     cont = ssl.create_default_context()
     sock = socket.create_connection((host, port))
@@ -28,7 +29,7 @@ def connect(bot): host = 'api.vndb.org'
 
 
 # Read response from the open TCP connection
-async def receive_data(bot, channel, raw=False, choose=True, jp=False):
+async def receive_data(bot, channel, author=None, raw=False, jp=False):
     # Read until the End of Transmission character is found
     chunk = 4096  # 4KB
     res = bot.sock.recv(chunk)
@@ -52,14 +53,14 @@ async def receive_data(bot, channel, raw=False, choose=True, jp=False):
     elif not data['num']:
         return None
     # If only one result found/desired, return the first one
-    elif not choose or len(data['items']) == 1:
+    elif not author or len(data['items']) == 1:
         return data['items'][0]
     # Otherwise, prompt the user to choose
     else:
-        return await choose_prompt(bot, data, channel, jp=jp)
+        return await choose_prompt(bot, data, channel, author, jp=jp)
 
 
-async def choose_prompt(bot, data, channel, jp=False):
+async def choose_prompt(bot, data, channel, author, jp=False):
     title = 'Which did you mean?'
     description = str()
 
@@ -79,7 +80,7 @@ async def choose_prompt(bot, data, channel, jp=False):
     await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
 
     def check(m):
-        return m.channel == channel and m.author != bot.user
+        return m.channel == channel and m.author == author
 
     msg = await bot.wait_for('message', check=check, timeout=10)
     index = int(msg.content) - 1
@@ -210,11 +211,11 @@ Game functions
 '''
 
 # Search by name, find description
-async def search(bot, filter, channel):
+async def search(bot, filter, channel, author=None):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, choose=True)
+    data = await receive_data(bot, channel, author=author)
 
     if not data:
         await channel.send('Visual novel not found.')
@@ -228,11 +229,11 @@ async def search(bot, filter, channel):
 
 
 # Search by name, find tags
-async def get_tags(bot, filter, channel):
+async def get_tags(bot, filter, channel, author):
     query = bytes('get vn basic,details,tags {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel)
+    data = await receive_data(bot, channel, author=author)
 
     if not data:
         await channel.send('Visual novel not found.')
@@ -258,13 +259,13 @@ async def get_tags(bot, filter, channel):
 
 
 # Search by name, find characters
-async def get_characters(bot, args, channel):
+async def get_characters(bot, args, channel, author):
     # Search by VN title to find the ID
     filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
     query = bytes('get vn basic {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    game = await receive_data(bot, channel, choose=False)
+    game = await receive_data(bot, channel, author=author)
 
     # Exit if game not found
     if not game:
@@ -273,15 +274,15 @@ async def get_characters(bot, args, channel):
 
     # Search characters matching game ID
     filter = '(vn = "{}")'.format(game['id'])
-    await search_character(bot, filter, channel)
+    await search_character(bot, filter, channel, author)
 
 
 # Search by name, find related novels
-async def get_relations(bot, filter, channel):
+async def get_relations(bot, filter, channel, author):
     query = bytes('get vn basic,details,relations {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel)
+    data = await receive_data(bot, channel, author)
 
     if not data:
         await channel.send('API Error.')
@@ -319,7 +320,7 @@ async def tag_define(bot, args, channel):
         await channel.send('Tag not found.')
 
 
-async def tag_search(bot, args, channel):
+async def tag_search(bot, args, channel, author):
     tags = list()
     for arg in args.lower().split(', '):
         if arg in bot.tags and bot.tags[arg]['searchable']:
@@ -330,18 +331,18 @@ async def tag_search(bot, args, channel):
         return
 
     filter = '(tags = {})'.format(json.dumps(tags))
-    await search(bot, filter, channel)
+    await search(bot, filter, channel, author=author)
 
 
 '''
 Character functions
 '''
 
-async def search_character(bot, filter, channel):
+async def search_character(bot, filter, channel, author):
     query = bytes('get character basic,details {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, jp=True)
+    data = await receive_data(bot, channel, author=author, jp=True)
 
     if not data:
         await channel.send('Literally who?')
@@ -355,11 +356,11 @@ async def search_character(bot, filter, channel):
     await embed_character(bot, data, description, channel)
 
 
-async def get_charinfo(bot, filter, channel):
+async def get_charinfo(bot, filter, channel, author):
     query = bytes('get character basic,details,meas,voiced,vns {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, jp=True)
+    data = await receive_data(bot, channel, author=author, jp=True)
 
     if not data:
         await channel.send('Literally who?')
@@ -394,7 +395,7 @@ async def get_charinfo(bot, filter, channel):
     for vn in data['vns']:
         query = bytes('get vn basic (id = {})\x04'.format(vn[0]), encoding='utf8')
         bot.sock.send(query)
-        game = await receive_data(bot, channel, choose=False)
+        game = await receive_data(bot, channel)
         description += '- {}\n'.format(game['title'])
     description += '\n'
 
@@ -407,11 +408,11 @@ async def get_charinfo(bot, filter, channel):
             seen.add(va['id'])
             query = bytes('get staff basic (id = {})\x04'.format(va['aid']), encoding='utf8')
             bot.sock.send(query)
-            actor = await receive_data(bot, channel, choose=False)
+            actor = await receive_data(bot, channel)
             if not actor:
                 query = bytes('get staff basic (id = {})\x04'.format(va['id']), encoding='utf8')
                 bot.sock.send(query)
-                actor = await receive_data(bot, channel, choose=False)
+                actor = await receive_data(bot, channel)
             if actor['original']:
                 description += '- {} ({})\n'.format(actor['name'], actor['original'])
             else:
@@ -421,11 +422,11 @@ async def get_charinfo(bot, filter, channel):
     await embed_character(bot, data, description, channel, thumbnail=True)
 
 
-async def get_traits(bot, filter, channel):
+async def get_traits(bot, filter, channel, author):
     query = bytes('get character basic,details,traits {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, jp=True)
+    data = await receive_data(bot, channel, author=author, jp=True)
 
     if not data:
         await channel.send('Literally who?')
@@ -461,10 +462,10 @@ async def trait_define(bot, args, channel):
         footer = 'Aliases: {}'.format(', '.join(bot.traits[args]['aliases'])) if bot.traits[args]['aliases'] else None
         await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
     except KeyError:
-        await channel.send('Tag not found.')
+        await channel.send('Trait not found.')
 
 
-async def trait_search(bot, args, channel):
+async def trait_search(bot, args, channel, author):
     traits = list()
     for arg in args.lower().split(', '):
         if arg in bot.traits and bot.traits[arg]['searchable']:
@@ -475,4 +476,4 @@ async def trait_search(bot, args, channel):
         return
 
     filter = '(traits = {})'.format(json.dumps(traits))
-    await search_character(bot, filter, channel)
+    await search_character(bot, filter, channel, author)
