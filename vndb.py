@@ -60,6 +60,8 @@ async def receive_data(bot, channel, author=None, raw=False, jp=False):
         return await choose_prompt(bot, data, channel, author, jp=jp)
 
 
+# Display a prompt for the user if there are multiple
+# options to choose from
 async def choose_prompt(bot, data, channel, author, jp=False):
     # Initialise variables for embed
     title = 'Which did you mean?'
@@ -97,11 +99,15 @@ async def choose_prompt(bot, data, channel, author, jp=False):
         return data['items'][index]
 
 
-
+# Build dicts of tags in memory so that they can be
+# 1. Indexed by tag name to find the ID
+# 2. Indexed by tag name/alias to find all info
 def load_tags(bot):
+    # Read the tags data file
     with open('data/vndb-tags-2019-12-13.json', 'r') as dump:
         tags = json.load(dump)
 
+    # Construct the two dicts
     bot.tags, bot.tag_ids = dict(), dict()
     for tag in tags:
         bot.tag_ids[tag['id']] = tag['name']
@@ -109,10 +115,15 @@ def load_tags(bot):
             bot.tags[alias.lower()] = tag
 
 
+# Build dicts of traits in memory so that they can be
+# 1. Indexed by tag name to find the ID
+# 2. Indexed by tag name/alias to find all info
 def load_traits(bot):
+    # Read the tags data file
     with open('data/vndb-traits-2019-12-13.json', 'r') as dump:
         traits = json.load(dump)
 
+    # Construct the two dicts
     bot.traits, bot.trait_ids = dict(), dict()
     for trait in traits:
         bot.trait_ids[trait['id']] = trait['name']
@@ -120,6 +131,7 @@ def load_traits(bot):
             bot.traits[alias.lower()] = trait
 
 
+# Format and remove non-plaintext from descriptions
 def clean_description(description):
     # Format spoilers
     description = re.sub('\[/?spoiler]', '||', description, flags=re.IGNORECASE)
@@ -139,6 +151,7 @@ def clean_description(description):
     return description
 
 
+# Build an embed based on data from a game dict
 async def embed_game(bot, data, description, channel, footer=None):
     url = 'https://vndb.org/v{}'.format(data['id'])
     if not footer:
@@ -156,6 +169,7 @@ async def embed_game(bot, data, description, channel, footer=None):
         thumbnail=thumbnail, footer=footer, channel=channel)
 
 
+# Build an embed based on data from a character dict
 async def embed_character(bot, data, description, channel, footer=None, thumbnail=None):
     url = 'https://vndb.org/c{}'.format(data['id'])
     if data['original']:
