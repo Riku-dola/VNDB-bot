@@ -13,8 +13,7 @@ Helper functions
 
 # Initiate a TCP connection to the VNDB API
 # Must be called prior to every request
-def connect(bot):
-    host = 'api.vndb.org'
+def connect(bot): host = 'api.vndb.org'
     port = 19535
     cont = ssl.create_default_context()
     sock = socket.create_connection((host, port))
@@ -29,7 +28,7 @@ def connect(bot):
 
 
 # Read response from the open TCP connection
-async def receive_data(bot, channel, type):
+async def receive_data(bot, channel, raw=False, choose=True, jp=False):
     # Read until the End of Transmission character is found
     chunk = 4096  # 4KB
     res = bot.sock.recv(chunk)
@@ -37,30 +36,57 @@ async def receive_data(bot, channel, type):
         res += bot.sock.recv(chunk)
 
     # Parse response
-    response, res = res.decode().split(' ', 1)
-    res = json.loads(res[:-1])
+    response, data = res.decode().split(' ', 1)
+    data = json.loads(data[:-1])
 
     # Sleep if API limit has been reached
-    if response == 'error' and res['id'] == 'throttled':
-        await channel.send('Too many requests. Sleeping for {} seconds.'.format(res['fullwait']))
-        time.sleep(res['fullwait'])
+    if response == 'error' and data['id'] == 'throttled':
+        await channel.send('Too many requests. Sleeping for {} seconds.'.format(data['fullwait']))
+        time.sleep(data['fullwait'])
         raise Exception
 
-    # Return the raw dict if requesting VNDB stats
-    # Used to find the number of VNs to rand()
-    if type == 'stats':
-        return res
-    # If there are no results, retur nothing
-    elif not res['num']:
+    # For raw data types, return the pure data
+    if raw:
+        return data
+    # If no results found, return None
+    elif not data['num']:
         return None
-    # If there is only one result, return it
-    elif res['num'] == 1:
-        return res['items'][0]
-    # If looking for relations, assume the first result is correct and return it
-    elif type == 'relations':
-        return res['items'][0]
+    # If only one result found/desired, return the first one
+    elif not choose or len(data['items']) == 1:
+        return data['items'][0]
+    # Otherwise, prompt the user to choose
     else:
-        return await choose(bot, res, channel, type)
+        return await choose_prompt(bot, data, channel, jp=jp)
+
+
+async def choose_prompt(bot, data, channel, jp=False):
+    title = 'Which did you mean?'
+    description = str()
+
+    key = 'title' if 'title' in data['items'][0].keys() else 'name'
+
+    for i in range(min(9, data['num'])):
+        if jp:
+            description += '**[{}]** {} ({})\n'.format(i + 1, data['items'][i][key], data['items'][i]['original'])
+        else:
+            description += '**[{}]** {}\n'.format(i + 1, data['items'][i][key])
+
+    if data['num'] > 9:
+        footer = 'Some search results not shown. Refine your search terms to display them.'
+    else:
+        footer = None
+
+    await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
+
+    def check(m):
+        return m.channel == channel and m.author != bot.user
+
+    msg = await bot.wait_for('message', check=check, timeout=10)
+    index = int(msg.content) - 1
+
+    if 0 <= index <= min(9, data['num']):
+        return data['items'][index]
+
 
 
 def load_tags(bot):
@@ -138,38 +164,6 @@ async def embed_character(bot, data, description, channel, footer=None, thumbnai
         image=image, thumbnail=thumbnail, footer=footer, channel=channel)
 
 
-async def choose(bot, res, channel, type):
-    title = 'Which did you mean?'
-    description = str()
-
-    if type == 'game':
-        key = 'title'
-    elif type == 'char':
-        key = 'name'
-
-    for i in range(min(9, res['num'])):
-        if type == 'char' and res['items'][i]['original']:
-            description += '**[{}]** {} ({})\n'.format(i + 1, res['items'][i][key], res['items'][i]['original'])
-        else:
-            description += '**[{}]** {}\n'.format(i + 1, res['items'][i][key])
-
-    if res['num'] > 9:
-        footer = 'Some search results not shown. Refine your search terms to display them.'
-    else:
-        footer = None
-
-    await bot.post_embed(title=title, description=description, footer=footer, channel=channel)
-
-    def check(m):
-        return m.channel == channel and m.author != bot.user
-
-    msg = await bot.wait_for('message', timeout=10)
-    index = int(msg.content) - 1
-
-    if 0 <= index <= min(9, res['num']):
-        return res['items'][index]
-
-
 '''
 General Functions
 '''
@@ -220,7 +214,7 @@ async def search(bot, filter, channel):
     query = bytes('get vn basic,details {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, 'game')
+    data = await receive_data(bot, channel, choose=True)
 
     if not data:
         await channel.send('Visual novel not found.')
@@ -238,7 +232,7 @@ async def get_tags(bot, filter, channel):
     query = bytes('get vn basic,details,tags {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, 'game')
+    data = await receive_data(bot, channel)
 
     if not data:
         await channel.send('Visual novel not found.')
@@ -270,7 +264,7 @@ async def get_characters(bot, args, channel):
     query = bytes('get vn basic {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    game = await receive_data(bot, channel, 'game')
+    game = await receive_data(bot, channel, choose=False)
 
     # Exit if game not found
     if not game:
@@ -287,7 +281,7 @@ async def get_relations(bot, filter, channel):
     query = bytes('get vn basic,details,relations {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, 'relations')
+    data = await receive_data(bot, channel)
 
     if not data:
         await channel.send('API Error.')
@@ -305,7 +299,7 @@ async def get_relations(bot, filter, channel):
 async def get_random(bot, channel):
     connect(bot)
     bot.sock.send(b'dbstats\x04')
-    data = await receive_data(bot, channel, 'stats')
+    data = await receive_data(bot, channel, raw=True)
     filter = '(id = {})'.format(random.randint(1, data['vn']))
     await search(bot, filter, channel)
 
@@ -347,7 +341,7 @@ async def search_character(bot, filter, channel):
     query = bytes('get character basic,details {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, 'char')
+    data = await receive_data(bot, channel, jp=True)
 
     if not data:
         await channel.send('Literally who?')
@@ -365,7 +359,7 @@ async def get_charinfo(bot, filter, channel):
     query = bytes('get character basic,details,meas,voiced,vns {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, 'char')
+    data = await receive_data(bot, channel, jp=True)
 
     if not data:
         await channel.send('Literally who?')
@@ -400,7 +394,7 @@ async def get_charinfo(bot, filter, channel):
     for vn in data['vns']:
         query = bytes('get vn basic (id = {})\x04'.format(vn[0]), encoding='utf8')
         bot.sock.send(query)
-        game = await receive_data(bot, channel, 'game')
+        game = await receive_data(bot, channel, choose=False)
         description += '- {}\n'.format(game['title'])
     description += '\n'
 
@@ -413,13 +407,13 @@ async def get_charinfo(bot, filter, channel):
             seen.add(va['id'])
             query = bytes('get staff basic (id = {})\x04'.format(va['aid']), encoding='utf8')
             bot.sock.send(query)
-            actor = await receive_data(bot, channel, 'actor')
+            actor = await receive_data(bot, channel, choose=False)
             if not actor:
                 query = bytes('get staff basic (id = {})\x04'.format(va['id']), encoding='utf8')
                 bot.sock.send(query)
-                actor = await receive_data(bot, channel, 'actor')
+                actor = await receive_data(bot, channel, choose=False)
             if actor['original']:
-                description += '- {} ({})\n'.format(actor['original'], actor['name'])
+                description += '- {} ({})\n'.format(actor['name'], actor['original'])
             else:
                 description += '- {}\n'.format(actor['name'])
         description += '\n'
@@ -431,7 +425,7 @@ async def get_traits(bot, filter, channel):
     query = bytes('get character basic,details,traits {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    data = await receive_data(bot, channel, 'char')
+    data = await receive_data(bot, channel, jp=True)
 
     if not data:
         await channel.send('Literally who?')
