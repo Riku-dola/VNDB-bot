@@ -431,17 +431,16 @@ async def get_charinfo(bot, filter, channel, author):
             if va['id'] in seen:
                 continue
             seen.add(va['id'])
-            query = bytes('get staff basic (id = {})\x04'.format(va['aid']), encoding='utf8')
+            query = bytes('get staff basic,aliases (id = {})\x04'.format(va['id']), encoding='utf8')
             bot.sock.send(query)
             actor = await receive_data(bot, channel)
-            if not actor:
-                query = bytes('get staff basic (id = {})\x04'.format(va['id']), encoding='utf8')
-                bot.sock.send(query)
-                actor = await receive_data(bot, channel)
-            if actor['original']:
-                description += '- {} ({})\n'.format(actor['name'], actor['original'])
+            aliases = {alias[0]:alias for alias in actor['aliases']}
+            alias = aliases[va['aid']]
+            if alias[2]:
+                description += '- {} ({})\n'.format(alias[1], alias[2])
+            # Might be unnecessary to handle this case
             else:
-                description += '- {}\n'.format(actor['name'])
+                description += '- {}\n'.format(alias[1])
         description += '\n'
 
     await embed_character(bot, data, description, channel, thumbnail=True)
