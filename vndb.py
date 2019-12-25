@@ -346,13 +346,13 @@ async def tag_search(bot, args, channel, author):
     tags = list()
     for arg in args.lower().split(', '):
         if arg in bot.tags and bot.tags[arg]['searchable']:
-            tags.append(bot.tags[arg]['id'])
+            tags.append('tags = [{}]'.format(bot.tags[arg]['id']))
 
     if not tags:
         await channel.send('Tag(s) not found.')
         return
 
-    filter = '(tags = {})'.format(json.dumps(tags))
+    filter = '({})'.format(' and '.join(tags))
     await search(bot, filter, channel, author=author)
 
 
@@ -491,11 +491,11 @@ async def trait_search(bot, args, channel, author):
     traits = list()
     for arg in args.lower().split(', '):
         if arg in bot.traits and bot.traits[arg]['searchable']:
-            traits.append(bot.traits[arg]['id'])
+            traits.append('traits = [{}]'.format(bot.traits[arg]['id']))
 
     if not traits:
         await channel.send('Trait(s) not found.')
         return
 
-    filter = '(traits = {})'.format(json.dumps(traits))
+    filter = '({})'.format(' and '.join(traits))
     await search_character(bot, filter, channel, author)

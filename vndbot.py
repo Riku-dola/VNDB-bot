@@ -105,8 +105,7 @@ class vndbot(discord.Client):
         aliases = ['tagsearch', 'ts']
         # Search by tag, get novels
         if cmd in aliases:
-            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
-            await vndb.tag_search(self, filter, channel, author)
+            await vndb.tag_search(self, args, channel, author)
             return
 
 
