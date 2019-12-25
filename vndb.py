@@ -104,7 +104,7 @@ async def choose_prompt(bot, data, channel, author, jp=False):
 # 2. Indexed by tag name/alias to find all info
 def load_tags(bot):
     # Read the tags data file
-    with open('data/vndb-tags-2019-12-13.json', 'r') as dump:
+    with open('data/vndb-tags-2019-09-04.json', 'r') as dump:
         tags = json.load(dump)
 
     # Construct the two dicts
@@ -120,7 +120,7 @@ def load_tags(bot):
 # 2. Indexed by tag name/alias to find all info
 def load_traits(bot):
     # Read the tags data file
-    with open('data/vndb-traits-2019-12-13.json', 'r') as dump:
+    with open('data/vndb-traits-2019-09-07.json', 'r') as dump:
         traits = json.load(dump)
 
     # Construct the two dicts
