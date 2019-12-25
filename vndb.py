@@ -263,10 +263,13 @@ async def get_tags(bot, filter, channel, author):
     elif data['tags']:
         description = list()
         for tag in data['tags']:
-            if not tag[2]:
-                description.append(bot.tag_ids[tag[0]])
-            else:
-                description.append('||{}||'.format(bot.tag_ids[tag[0]]))
+            try:
+                if not tag[2]:
+                    description.append(bot.tag_ids[tag[0]])
+                else:
+                    description.append('||{}||'.format(bot.tag_ids[tag[0]]))
+            except KeyError:
+                pass
         description = ', '.join(description)
         footer = None
         if len(description) > 1000:
@@ -455,10 +458,13 @@ async def get_traits(bot, filter, channel, author):
     elif data['traits']:
         description = list()
         for trait in data['traits']:
-            if not trait[1]:
-                description.append(bot.trait_ids[trait[0]])
-            else:
-                description.append('||{}||'.format(bot.trait_ids[trait[0]]))
+            try:
+                if not trait[1]:
+                    description.append(bot.trait_ids[trait[0]])
+                else:
+                    description.append('||{}||'.format(bot.trait_ids[trait[0]]))
+            except KeyError:
+                pass
         description = ', '.join(description)
         footer = None
         if len(description) > 1000:
