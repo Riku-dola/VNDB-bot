@@ -32,11 +32,6 @@ class vndbot(discord.Client):
         if message.author == self.user:
             return
 
-        if message.content == '.reconnect' and message.author.id == 138581816872271872:
-            vndb.connect(self)
-            await message.channel.send('Successfully reconnected.')
-            return
-
         if 'eroge' in message.content.lower():
             await vndb.interject(message)
 
