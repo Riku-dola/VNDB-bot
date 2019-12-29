@@ -221,11 +221,16 @@ async def help(bot, channel):
 
 
 async def interject(message):
-    if random.randint(0, 1):
-        msg = "I'd just like to interject for a moment. What you're referring to as _eroge_, is in fact, _erogay_, or as I've recently taken to calling it, ero _plus_ gay."
-    else:
-        msg = re.sub('eroge', '**erogay**', message.content)
-    await message.channel.send(msg)
+    # Trigger an interjection ~40% of the time
+    if random.randint(1, 100) < 40:
+        choice = random.randint(1, 2)
+        if choice == 1:
+            msg = "I'd just like to interject for a moment. What you're referring to as _eroge_, is in fact, _erogay_, or as I've recently taken to calling it, ero _plus_ gay."
+        elif choice == 2:
+            msg = re.sub('eroge', '**erogay**', message.content)
+        # Add more choices...
+
+        await message.channel.send(msg)
 
 
 '''
