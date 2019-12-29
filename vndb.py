@@ -290,7 +290,7 @@ async def get_characters(bot, args, channel, author):
     query = bytes('get vn basic {}\x04'.format(filter), encoding='utf8')
     connect(bot)
     bot.sock.send(query)
-    game = await receive_data(bot, channel, author=author)
+    game = await receive_data(bot, channel)
 
     # Exit if game not found
     if not game:
