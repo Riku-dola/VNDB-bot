@@ -32,7 +32,7 @@ class vndbot(discord.Client):
         if message.author == self.user:
             return
 
-        if 'eroge' in message.content.lower():
+        if 'eroge' in message.content.lower() and not message.content.startswith('.vn '):
             await vndb.interject(message)
 
         if not message.content.startswith('.vn '):
