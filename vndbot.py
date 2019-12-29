@@ -43,8 +43,7 @@ class vndbot(discord.Client):
         channel = message.channel
         author = message.author
 
-        aliases = ['help', 'h']
-        if cmd in aliases:
+        if cmd in ['help', 'h']:
             await vndb.help(self, channel)
             return
 
@@ -53,36 +52,31 @@ class vndbot(discord.Client):
         Game commands
         '''
 
-        aliases = ['search', 's', 'find', 'f']
         # Search by name, find description
-        if cmd in aliases:
+        if cmd in ['search', 's', 'find', 'f']:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.search(self, filter, channel, author=author)
             return
 
-        aliases = ['gettags', 'gt']
         # Search by name, find tags
-        if cmd in aliases:
+        if cmd in ['gettags', 'gt']:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.get_tags(self, filter, channel, author)
             return
 
-        aliases = ['getcharacters', 'getchars', 'gc']
         # Search by name, find related novels
-        if cmd in aliases:
+        if cmd in ['getcharacters', 'getchars', 'gc']:
             await vndb.get_characters(self, args, channel, author)
             return
 
-        aliases = ['getrelations', 'getrelated', 'gr', 'relations', 'related', 'rel']
         # Search by name, find related novels
-        if cmd in aliases:
+        if cmd in ['getrelations', 'getrelated', 'gr']:
             filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.get_relations(self, filter, channel, author)
             return
 
-        aliases = ['random', 'rand', 'r']
         # Get random novel
-        if cmd in aliases:
+        if cmd in ['random', 'rand', 'r']:
             await vndb.get_random(self, channel)
             return
 
@@ -91,15 +85,13 @@ class vndbot(discord.Client):
         Tag commands
         '''
 
-        aliases = ['tagdefine', 'td']
         # Search by tag, get definition
-        if cmd in aliases:
+        if cmd in ['tagdefine', 'td']:
             await vndb.tag_define(self, args, channel)
             return
 
-        aliases = ['tagsearch', 'ts']
         # Search by tag, get novels
-        if cmd in aliases:
+        if cmd in ['tagsearch', 'ts']:
             await vndb.tag_search(self, args, channel, author)
             return
 
@@ -108,23 +100,20 @@ class vndbot(discord.Client):
         Character commands
         '''
 
-        aliases = ['character', 'char', 'c']
         # Search by name, get description
-        if cmd in aliases:
+        if cmd in ['character', 'char', 'c']:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.search_character(self, filter, channel, author)
             return
 
-        aliases = ['getcharinfo', 'charinfo', 'gci', 'gi']
         # Search by name, get info
-        if cmd in aliases:
+        if cmd in ['getcharinfo', 'charinfo', 'gci', 'gi']:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.get_charinfo(self, filter, channel, author)
             return
 
-        aliases = ['gettraits', 'gtr', 'sex']
         # Search by name, get traits
-        if cmd in aliases:
+        if cmd in ['gettraits', 'gtr', 'sex']:
             filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
             await vndb.get_traits(self, filter, channel, author)
             return
@@ -134,15 +123,13 @@ class vndbot(discord.Client):
         Trait commands
         '''
 
-        aliases = ['traitdefine', 'trd']
         # Search by trait, get definition
-        if cmd in aliases:
+        if cmd in ['traitdefine', 'trd']:
             await vndb.trait_define(self, args, channel)
             return
 
-        aliases = ['traitsearch', 'trs']
         # Search by trait, get character
-        if cmd in aliases:
+        if cmd in ['traitsearch', 'trs']:
             await vndb.trait_search(self, args, channel, author)
             return
 
