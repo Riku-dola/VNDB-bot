@@ -492,7 +492,7 @@ async def trait_define(bot, args, channel):
     try:
         title = bot.traits[args]['name']
         description = clean_description(bot.traits[args]['description'])
-        url = 'https://vndb.org/g{}'.format(bot.traits[args]['id'])
+        url = 'https://vndb.org/i{}'.format(bot.traits[args]['id'])
         footer = 'Aliases: {}'.format(', '.join(bot.traits[args]['aliases'])) if bot.traits[args]['aliases'] else None
         await bot.post_embed(title=title, description=description, url=url, channel=channel, footer=footer)
     except KeyError:
