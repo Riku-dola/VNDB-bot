@@ -135,6 +135,8 @@ def load_traits(bot):
 def clean_description(description):
     # Format spoilers
     description = re.sub('\[/?spoiler]', '||', description, flags=re.IGNORECASE)
+    # Remove image links
+    description = re.sub('\[url=.*?\](NSFW\s)?Example\s?\d*\[\/url\]', '', description, flags=re.IGNORECASE)
     # Strip bbcode
     description = bbcode.Parser().strip(description)
     # Remove sources
