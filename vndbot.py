@@ -54,13 +54,13 @@ class vndbot(discord.Client):
 
         # Search by name, find description
         if cmd in ['search', 's', 'find', 'f']:
-            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
+            filter = '(search ~ "{}")'.format(args, args)
             await vndb.search(self, filter, channel, author=author)
             return
 
         # Search by name, find tags
         if cmd in ['gettags', 'gt']:
-            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
+            filter = '(search ~ "{}")'.format(args, args)
             await vndb.get_tags(self, filter, channel, author)
             return
 
@@ -71,7 +71,7 @@ class vndbot(discord.Client):
 
         # Search by name, find related novels
         if cmd in ['getrelations', 'getrelated', 'gr']:
-            filter = '(title ~ "{}" or original ~ "{}")'.format(args, args)
+            filter = '(search ~ "{}")'.format(args, args)
             await vndb.get_relations(self, filter, channel, author)
             return
 
@@ -102,19 +102,19 @@ class vndbot(discord.Client):
 
         # Search by name, get description
         if cmd in ['character', 'char', 'c']:
-            filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
+            filter = '(search ~ "{}")'.format(args, args)
             await vndb.search_character(self, filter, channel, author)
             return
 
         # Search by name, get info
         if cmd in ['getcharinfo', 'charinfo', 'gci', 'gi']:
-            filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
+            filter = '(search ~ "{}")'.format(args, args)
             await vndb.get_charinfo(self, filter, channel, author)
             return
 
         # Search by name, get traits
         if cmd in ['gettraits', 'gtr', 'sex']:
-            filter = '(name ~ "{}" or original ~ "{}")'.format(args, args)
+            filter = '(search ~ "{}")'.format(args, args)
             await vndb.get_traits(self, filter, channel, author)
             return
 
