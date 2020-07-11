@@ -231,7 +231,7 @@ async def interject(message):
         elif choice == 2:
             msg = re.sub('eroge', '**erogay**', message.content)
         elif choice == 3:
-            msg = "**BUY LAMUNATION OUT NOW ON STEAM** https://store.steampowered.com/app/1025140/LAMUNATION_international/"
+            msg = "yuzupog"
         # Add more choices...
 
         await message.channel.send(msg)
