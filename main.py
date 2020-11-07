@@ -1,7 +1,7 @@
 import asyncio
 from vndbot import *
 
-bot = vndbot()
+bot = vndbot(intents=discord.Intents.all())
 
 try:
     main_loop = asyncio.get_event_loop()
